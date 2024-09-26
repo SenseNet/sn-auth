@@ -1,0 +1,154 @@
+@font-face {
+    font-family: "Spartan Medium";
+    src: url(/fonts/spartan/Spartan-Medium.ttf);
+}
+
+@font-face {
+    font-family: "Spartan SemiBold";
+    src: url(/fonts/spartan/Spartan-SemiBold.ttf);
+}
+
+@font-face {
+    font-family: "Spartan ExtraBold";
+    src: url(/fonts/spartan/Spartan-ExtraBold.ttf);
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    color: #5a5a5a;
+    font-size: 14px;
+    font-family: "Spartan Medium", serif !important;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+.main-container {
+    height: 100vh;
+    width: 100vw;
+    background-image: url(/images/background.png);
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+    position: relative;
+}
+
+.content {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.authentication-box {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    display: flex;
+    min-width: 920px;
+}
+
+.authentication-box-sensenet {
+    flex-basis: 35%;
+    background-color: #0197db;
+    position: relative;
+}
+
+.logo-wrapper {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.authentication-box-content {
+    background-color: white;    
+    flex-basis: 65%;
+    padding: 3rem 4rem;
+}
+
+.card-action {
+    background: #0197db;
+    border-radius: .5rem;
+    border: 0;
+    padding: .5rem 1rem;
+    color: white;
+    min-width: 128px;
+    font-weight: 500;
+}
+
+.button-right {
+    margin-left: auto
+}
+
+.text-input {
+    width: 100%;
+}
+
+.font-semibold {
+    font-family: "Spartan SemiBold", serif;
+}
+
+.font-extrabold {
+    font-family: "Spartan ExtraBold", serif;
+}
+
+.card-title {
+    margin-bottom: 1rem;
+    color: #1f1f1f;
+    font-size: 1.5rem;
+}
+
+form label, .navigation-link {
+    font-size: 0.8rem;
+}
+
+.navigation-link {
+    color: #0197db;
+    text-decoration: none;
+}
+
+input {
+    border: 1px solid #5a5a5a;
+    color: #5a5a5a;
+}
+
+.logo-wrapper img {
+    width: 150px;
+}
+
+input[type=checkbox] {
+    width: 18px;
+    height: 18px;
+}
+
+input[type=checkbox] + label {
+    font-weight: 600;
+}
+
+.grecaptcha-badge {
+    position: initial !important;
+    margin-top: 0.5rem;
+}
+
+.auth-qr-code{
+    text-align: center;
+    max-width: 100px;
+    max-height: 100px;
+}
+
+.error-message {
+    text-align: center;
+    color: red;
+    font-size: 0.8rem;
+    margin: 1rem 0;
+}
+
+.success-message {
+    text-align: center;
+    color: green;
+    font-size: 0.8rem;
+    margin: 1rem 0;
+}

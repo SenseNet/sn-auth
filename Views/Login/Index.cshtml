@@ -1,0 +1,102 @@
+﻿@using Microsoft.Extensions.Options
+@using SenseNetAuth.Models.Options
+@model SenseNetAuth.Models.ViewModels.LoginViewModel
+@inject IOptions<RecaptchaSettings> RecaptchaOptions;
+@{
+    ViewBag.Title = "Sense/Net Auth - Login";
+
+    var redirectUrlHost = !string.IsNullOrEmpty(Model.RedirectUrl)
+        ? new Uri(Model.RedirectUrl).Host.ToString()
+        : null;
+    var queryParams = $"redirectUrl={Model.RedirectUrl}&callbackUri={Model.CallbackUri}";
+    var registrationLink = $"/Registration?{queryParams}";
+    var forgotPasswordLink = $"/ForgottenPassword?{queryParams}";
+    var clearCookiesLink = $"/Login?{queryParams}&clearCookies=true";
+    var recaptcha = RecaptchaOptions.Value;
+}
+
+<div class="authentication-box">
+    <div class="authentication-box-sensenet">
+        <figure class="logo-wrapper">
+            <a href="https://sensenet.com" target="_blank">
+                <img class="logo" src="/images/sensenet-logo.svg" alt="sensenet logo">
+            </a>
+        </figure>
+    </div>
+    <div class="authentication-box-content">
+        <p class="card-title font-semibold">Login to Sense/Net CSP</p>
+        <div>
+            @if (!Model.IsHostInvalid)
+            {
+                @if ((!string.IsNullOrEmpty(Model.ErrorMessage)))
+                {
+                    <div class="error-message font-semibold">@Model.ErrorMessage</div>
+                }
+                else if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                {
+                    <div class="success-message font-semibold">@Model.SuccessMessage</div>
+                }
+                <form id="loginForm" action="/login" method="post">
+                    <fieldset>
+                        <input type="hidden" name="RedirectUrl" value="@Model.RedirectUrl" />
+                        <input type="hidden" name="CallbackUri" value="@Model.CallbackUri" />
+                        @if (Model.IsRememberMeSet)
+                        {
+                            <div class="mb-2">
+                                <p class="mb-1">Welcome back, @Model.RememberMeLoginName</p>
+                                <a class="navigation-link" href=@clearCookiesLink>Clear remember me cookies</a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-3">
+                                <label for="LoginName">Username</label><br />
+                                <input class="text-input" id="LoginName" name="LoginName" required />
+                            </div>
+                            <div class="mb-3">
+                                <label for="Password">Password</label><br />
+                                <input class="text-input" id="Password" name="Password" type="password" required />
+                            </div>
+                            <div class="d-inline-flex align-items-center">
+                                <input class="me-2" id="RememberMe" name="RememberMe" type="checkbox" /><br />
+                                <label for="RememberMe">Remember Me</label>
+                            </div>
+                        }
+                    </fieldset>
+                    <div class="text-end mb-3">
+                        <button class="card-action g-recaptcha"
+                                data-sitekey="@recaptcha.SiteKey"
+                                data-callback="onSubmit"
+                                data-action="submit">
+                            Login
+                        </button>
+                    </div>
+                </form>
+                <a class="navigation-link" href="@forgotPasswordLink">Forgot password?</a>
+                @if (Model.IsRegistrationEnabled)
+                {
+                    <br />
+                    <a class="mt-1 navigation-link" href="@registrationLink">I don't have an account</a>
+                }
+            }
+            else
+            {
+                <div class="error-message font-semibold">Site redirect to is invalid.</div>
+            }
+        </div>
+    </div>
+</div>
+
+    @section Scripts
+{
+    <script>
+        function onSubmit(token) {
+            const form = document.getElementById("loginForm");
+            if (form.checkValidity()) {
+                form.submit();
+            } else {
+                form.reportValidity();
+            }
+        }
+    </script>
+    }

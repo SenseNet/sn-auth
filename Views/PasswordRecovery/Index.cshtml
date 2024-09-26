@@ -1,0 +1,67 @@
+﻿@using Microsoft.Extensions.Options
+@using SenseNetAuth.Models.Options
+@model SenseNetAuth.Models.ViewModels.PasswordRecoveryViewModel
+@inject IOptions<RecaptchaSettings> RecaptchaOptions;
+@{
+    ViewBag.Title = "Sense/Net Auth - Password recovery";
+
+    var loginLink = $"/Login?redirectUrl={Model.RedirectUrl}&callbackUri={Model.CallbackUri}";
+    var recaptcha = RecaptchaOptions.Value;
+}
+
+<div class="authentication-box">
+    <div class="authentication-box-sensenet">
+        <figure class="logo-wrapper">
+            <a href="https://sensenet.com" target="_blank">
+                <img class="logo" src="/images/sensenet-logo.svg" alt="sensenet logo">
+            </a>
+        </figure>
+    </div>
+    <div class="authentication-box-content">
+        <p class="card-title font-semibold">Password Recovery</p>
+        <div>
+            @if ((!string.IsNullOrEmpty(Model.ErrorMessage)))
+            {
+                <div class="error-message font-semibold">@Model.ErrorMessage</div>
+            }
+            <form id="passwordRecoveryForm" action="/passwordRecovery" method="post">
+                <fieldset>
+                    <input type="hidden" name="RedirectUrl" value="@Model.RedirectUrl" />
+                    <input type="hidden" name="CallbackUri" value="@Model.CallbackUri" />
+                    <input type="hidden" name="Token" value="@Model.RecoveryToken" />
+                    <div class="mb-3">
+                        <label for="Password">Password</label><br />
+                        <input class="text-input" id="Password" name="Password" type="password" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="ConfirmPassword">Confirm password</label><br />
+                        <input class="text-input" id="ConfirmPassword" name="ConfirmPassword" type="password" required />
+                    </div>
+                </fieldset>
+                <div class="text-end mb-3">
+                    <button class="card-action g-recaptcha"
+                            data-sitekey="@recaptcha.SiteKey"
+                            data-callback="onSubmit"
+                            data-action="submit">
+                        Recover password
+                    </button>
+                </div>
+            </form>
+        </div>
+        <a class="navigation-link" href="@loginLink">Sign in</a>
+    </div>
+</div>
+
+@section Scripts
+                        {
+    <script>
+        function onSubmit(token) {
+            const form = document.getElementById("passwordRecoveryForm");
+            if (form.checkValidity()) {
+                form.submit();
+            } else {
+                form.reportValidity();
+            }
+        }
+    </script>
+}

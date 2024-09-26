@@ -1,0 +1,84 @@
+﻿@using Microsoft.Extensions.Options
+@using SenseNetAuth.Models.Options
+@model SenseNetAuth.Models.ViewModels.RegistrationViewModel
+@inject IOptions<RecaptchaSettings> RecaptchaOptions;
+@{
+    ViewBag.Title = "Sense/Net Auth - Registration";
+
+    var redirectUrlHost = !string.IsNullOrEmpty(Model.RedirectUrl) 
+        ? new Uri(Model.RedirectUrl).Host.ToString() 
+        : null;
+    var repositoryUrlHost = !string.IsNullOrEmpty(Model.RepositoryUrl)
+        ? new Uri(Model.RepositoryUrl).Host.ToString()
+        : null;
+    var loginLink = $"/Login?redirectUrl={Model.RedirectUrl}&callbackUri={Model.CallbackUri}";
+    var recaptcha = RecaptchaOptions.Value;
+}
+
+<div class="authentication-box">
+    <div class="authentication-box-sensenet">
+        <figure class="logo-wrapper">
+            <a href="https://sensenet.com" target="_blank">
+                <img class="logo" src="/images/sensenet-logo.svg" alt="sensenet logo">
+            </a>
+        </figure>
+    </div>
+    <div class="authentication-box-content">
+        <p class="card-title font-semibold">Registration</p>
+        <div>
+            @if ((!string.IsNullOrEmpty(Model.ErrorMessage)))
+            {
+                <div class="error-message font-semibold">@Model.ErrorMessage</div>
+            }
+            else if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="success-message font-semibold">@Model.SuccessMessage</div>
+            }
+            <form id="registrationForm" action="/registration" method="post">
+                <fieldset>
+                    <input type="hidden" name="RedirectUrl" value="@Model.RedirectUrl" />
+                    <input type="hidden" name="CallbackUri" value="@Model.CallbackUri" />
+                    <div class="mb-3">
+                        <label for="Email">Email</label><br />
+                        <input class="text-input" id="Email" name="Email" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="FullName">Fullname</label><br />
+                        <input class="text-input" id="FullName" name="FullName" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="Password">Password</label><br />
+                        <input class="text-input" id="Password" name="Password" type="password" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="ConfirmPassword">Confirm password</label><br />
+                        <input class="text-input" id="ConfirmPassword" name="ConfirmPassword" type="password" required />
+                    </div>
+                </fieldset>
+                <div class="text-end mb-3">
+                    <button class="card-action g-recaptcha"
+                            data-sitekey="@recaptcha.SiteKey"
+                            data-callback="onSubmit"
+                            data-action="submit">
+                        Register
+                    </button>
+                </div>
+            </form>
+        </div>
+        <a class="navigation-link" href="@loginLink">Already have an account</a>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        function onSubmit(token) {
+            const form = document.getElementById("registrationForm");
+            if (form.checkValidity()) {
+                form.submit();
+            } else {
+                form.reportValidity();
+            }
+        }
+    </script>
+}

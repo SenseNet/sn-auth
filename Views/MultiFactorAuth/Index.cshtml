@@ -1,0 +1,86 @@
+﻿@using Microsoft.Extensions.Options
+@using SenseNetAuth.Models.Options
+@model SenseNetAuth.Models.ViewModels.MultiFactorViewModel
+@inject IOptions<RecaptchaSettings> RecaptchaOptions;
+@{
+    ViewBag.Title = "Sense/Net Auth - Login";
+
+    var recaptcha = RecaptchaOptions.Value;
+}
+
+<div class="authentication-box">
+    <div class="authentication-box-sensenet">
+        <figure class="logo-wrapper">
+            <a href="https://sensenet.com" target="_blank">
+                <img class="logo" src="/images/sensenet-logo.svg" alt="sensenet logo">
+            </a>
+        </figure>
+    </div>
+    <div class="authentication-box-content">
+        <p class="card-title font-semibold">Login to Sense/Net CSP</p>
+        <div>
+            @if (!string.IsNullOrEmpty(Model.QrCodeSetupImageUrl))
+            {
+                <p>
+                    Before you log in, you have to register for two-factor authentication. 
+                    To do this, you will have to use the Microsoft Authenticator, 
+                    Google Authenticator or any other authenticator mobile app to scan this QR code.
+                    After a successful registration please provide the code displayed in the app in the text box below.
+                </p>
+                <div>
+                    <p><b>Initialize by QR code:</b></p>
+                    <div>
+                        <img class="auth-qr-code" src="@Model.QrCodeSetupImageUrl" alt="QR code" />
+                    </div>
+                    <p><b>or use manual key:</b></p>
+                    <p>@Model.ManualEntryKey</p>
+                </div>
+            }
+            else
+            {
+                <p>
+                    Multi-Factor Authentication is enabled in your profile. Please enter your authentication code below.
+                </p>
+            }
+            @if ((!string.IsNullOrEmpty(Model.ErrorMessage)))
+            {
+                <div class="error-message font-semibold">@Model.ErrorMessage</div>
+            }
+            <form id="multiFactorLoginForm" action="/multiFactorAuth" method="post">
+                <fieldset>
+                    <input type="hidden" name="RedirectUrl" value="@Model.RedirectUrl" />
+                    <input type="hidden" name="CallbackUri" value="@Model.CallbackUri" />
+                    <input type="hidden" name="MultiFactorAuthToken" value="@Model.MultiFactorAuthToken" />
+                    <input type="hidden" name="QrCodeSetupImageUrl" value="@Model.QrCodeSetupImageUrl" />
+                    <input type="hidden" name="ManualEntryKey" value="@Model.ManualEntryKey" />
+                    <div class="mb-3">
+                        <label for="MultiFactorCode">Code</label><br />
+                        <input class="text-input" id="MultiFactorCode" name="MultiFactorCode" type="text" required />
+                    </div>
+                </fieldset>
+                <div class="text-end mb-3">
+                    <button class="card-action g-recaptcha"
+                            data-sitekey="@recaptcha.SiteKey"
+                            data-callback="onSubmit"
+                            data-action="submit">
+                        Send
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        function onSubmit(token) {
+            const form = document.getElementById("multiFactorLoginForm");
+            if (form.checkValidity()) {
+                form.submit();
+            } else {
+                form.reportValidity();
+            }
+        }
+    </script>
+}
