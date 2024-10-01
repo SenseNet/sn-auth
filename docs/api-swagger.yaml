@@ -1,0 +1,445 @@
+openapi: 3.1.0
+info:
+  title: SN Auth
+  description: API documentation for 'SN Auth' authentication server.
+  version: 1.0.0
+servers:
+  - url: https://example.com/
+    description: Production server
+
+paths:
+  /login:
+    post:
+      tags: 
+        - /api/auth
+      description: Endpoint for logging in
+      requestBody:
+        description: User credentials
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: |
+            Credentials validated successfully. Response can be the followings:
+            - Access token & refesh token filled with the adequate token when the user does not have MFA enabled.
+            - Access token & refesh token omitted from the response and mfa properties filled when MFA is required.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schema:
+                    $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestException'
+          
+  /login/multi-factor:
+    post:
+      tags: 
+        - /api/auth
+      description: Endpoint for sending MFA one time password and log in
+      requestBody:
+        description: MFA token and one time password
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MultiFactorLoginRequest'
+      responses:
+        '200':
+          description: Returning an access token & refesh token pair.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schema:
+                    $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestException'
+          
+  /logout:
+    post:
+      tags: 
+        - /api/auth
+      description: Clearing access and refresh token.
+      responses:
+        '200':
+          description: Logged out successfully.
+          
+  /validate-token:
+    get:
+      tags: 
+        - /api/auth
+      description: Gives back if the sent access token is expired or not.
+      responses:
+        '200':
+          description: Token is valid
+        '401':
+          $ref: '#/components/responses/UnauthorizedException'
+          
+  /remember-me:
+    delete:
+      tags: 
+        - /api/auth
+      description: Invalidates remember me token
+      requestBody:
+        description: MFA token and one time password
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: Token invalidated.
+          
+  /convert-auth-token:
+    post:
+      tags: 
+        - /api/auth
+      description: Logs in user. Used when the client application uses auth server's built-in ui.
+      requestBody:
+        description: Received auth token should be sent immediately back to the server to get a access token & refresh token pair.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200': 
+          description: Access token & refresh token pair.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schema:
+                    $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedException'
+  
+  /refresh-token:
+    post:
+      tags:
+        - /api/auth
+      description: Endpoint for refreshing access token.
+      requestBody:
+        description: Refresh token.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200': 
+          description: Access token & refresh token pair.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schema:
+                    $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedException'
+    
+  /registration:
+    post:
+      tags:
+        - /api/auth
+      description: Endpoint for registrating new user. Registration process must be enabled in the appsettings.json in order to use this endpoint.
+      requestBody:
+        description: Details of the new user.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+      responses:
+        '200': 
+          description: Details of the newly registrated user.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schema:
+                    $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestException'
+          
+  /forgotten-password:
+    post:
+      tags:
+        - /api/auth
+      description: Endpoint for requesting a password recovery email.
+      requestBody:
+        description: The user's email must be sent. PasswordRecoveryUrl must be sent if the client uses custom ui for resetting password. Otherwise, it will be the auth server's built in password recovery endpoint.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgottenPasswordRequest'
+      responses:
+        '200': 
+          description: Email sent.
+        '400':
+          $ref: '#/components/responses/BadRequestException'
+          
+  /password-recovery:
+    post:
+      tags:
+        - /api/auth
+      description: Endpoint for recovering a user's password.
+      requestBody:
+        description: New password and the recovery token.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordRecoveryRequest'
+      responses:
+        '200': 
+          description: Password successfully reset.
+        '400':
+          $ref: '#/components/responses/BadRequestException'
+          
+  /change-password:
+    post:
+      tags:
+        - /api/auth
+      description: Endpoint for changing a user's password.
+      requestBody:
+        description: New password.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200': 
+          description: Password successfully reset.
+        '401':
+          $ref: '#/components/responses/UnauthorizedException'
+          
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequestException:
+      description: The request was invalid or malformed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: number
+                example: 400
+              errorMessage:
+                type: string
+                example: Invalid credentials
+    UnauthorizedException:
+      description: Access token is missing or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: number
+                example: 401
+              errorMessage:
+                type: string
+                example: Unauthorized access
+    ForbiddenException:
+      description: The user does not have permission to access the resource
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              statusCode:
+                type: number
+                example: 403
+              errorMessage:
+                type: string
+                example: Access to the requested resource is forbidden
+              
+  schemas:
+    ChangePasswordRequest:
+      description: Change password request. Password must be at least 8 characters long, must contain at least one upper and lower character and must have at least one digit.
+      type: object
+      properties:
+        password:
+          type: string
+          example: "Password123"
+      required:
+        - password
+    ForgottenPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: The email address associated with the user account
+          example: "user@example.com"
+        passwordRecoveryUrl:
+          type: string
+          format: uri
+          description: The URL to redirect the user for password recovery
+          example: "https://example.com/password-recovery"
+      required:
+        - email
+    LoginRequest:
+      type: object
+      properties:
+        loginName:
+          type: string
+          description: The username used to log in
+          example: "sn\\user"
+        password:
+          type: string
+          description: The password for the account
+          example: "Password123"
+        rememberMeToken:
+          type: string
+          description: Token to keep the user logged in for future sessions
+          example: "randomlyGeneratedToken123"
+        rememberMeRequested:
+          type: boolean
+          description: Indicates if the user has requested to be remembered in future logins
+          example: true
+      required:
+        - loginName
+        - password
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: The token used for authenticating API requests
+          example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE3Mjc3MzAxNjIsImV4cCI6MTc1OTI2NjE2MiwiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIkdpdmVuTmFtZSI6IkpvaG5ueSIsIlN1cm5hbWUiOiJSb2NrZXQiLCJFbWFpbCI6Impyb2NrZXRAZXhhbXBsZS5jb20iLCJSb2xlIjpbIk1hbmFnZXIiLCJQcm9qZWN0IEFkbWluaXN0cmF0b3IiXX0.SgeivfnP7giKee2NF8t8ZDiOIRNk4yyIoAMMFQLDvc4"
+        refreshToken:
+          type: string
+          description: The token used to refresh the access token
+          example: "aCEmAYzT49YtzQz7P1aQSYOLL5fU0DswADVueJemIPlrUAM8R9QptgCoTuB8PGFzdsVdGE3JG9y6jFvs9OqT05SFJbs6ZsgWbpIkpfBYpIQgeMJZVuU83sObw7aMqxaR"
+        authToken:
+          type: string
+          description: The authentication token for the user. This is used when a user logs in from the built-in ui.
+          example: "3UvrOuIkp9w7V70l8RZ5ytgOJEQd0s9aBkRfMH1wFQ9EQKfutYwE6jGkdaxEIpLe5yhQbkIZ2W6jKhHAlsfaAqoi2RSf3KDYEuMbpQJ6cWrr5wkZZK4v7ljq0r6vOdyQ"
+        multiFactorRequired:
+          type: boolean
+          description: Indicates if multi-factor authentication (MFA) is enabled for the user.
+          example: true
+        qrCodeSetupImageUrl:
+          type: string
+          format: uri
+          description: URL for the QR code image used for MFA setup
+          example: "https://example.com/qrcode"
+        manualEntryKey:
+          type: string
+          description: The manual entry key for setting up MFA
+          example: "K5E46BOCP5RSOYWQSS352R3OBQQTYVEOIXUA5M25QLJ40GC6TL85QXYH2KEJ76QV"
+        multiFactorAuthToken:
+          type: string
+          description: Temporary token used for multi-factor authentication
+          example: "B7duEgjWDi1ys1gCmOQzQFvsihcmvIiPbtGo188LsCX2TXhy6ZZwy6lpvKKiVQ4psadl0HwIpUtUJ8JGIQtqeQq8lh6uBLBkeBPMcQPYa1p4TsYFOxUooAqo9H3h7ebp"
+        rememberMeDetails:
+          $ref: '#/components/schemas/RememberMeDetails'
+    MultiFactorLoginRequest:
+      type: object
+      properties:
+        multiFactorAuthToken:
+          type: string
+          description: Temporary token used for multi-factor authentication
+          example: "B7duEgjWDi1ys1gCmOQzQFvsihcmvIiPbtGo188LsCX2TXhy6ZZwy6lpvKKiVQ4psadl0HwIpUtUJ8JGIQtqeQq8lh6uBLBkeBPMcQPYa1p4TsYFOxUooAqo9H3h7ebp"
+        multiFactorCode:
+          type: string
+          description: The code generated by the user's multi-factor authentication app or device
+          example: "123456"
+      required:
+        - multiFactorAuthToken
+        - multiFactorCode
+    PasswordRecoveryRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The token sent to the user for password recovery
+          example: "0paq1eexdXwElwWPrCAUgWEJWyaqvAHYvKCEX7EJWdJjiLaRmqehpmJe95g2J9IAL5KioYxTW5EwWQQx4Ibmqxmhqd91vqFRugQzML6JusA4e3tDTyOUk32daHgBlX6c"
+        password:
+          type: string
+          description: The new password the user wishes to set
+          example: "Password123"
+      required:
+        - token
+        - password
+    RegistrationRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: The email address of the user for registration
+          example: "user@example.com"
+        fullName:
+          type: string
+          description: The full name of the user
+          example: "John Doe"
+        password:
+          type: string
+          description: The password for the user account
+          example: "Password123"
+      required:
+        - email
+        - fullName
+        - password
+    RegistrationResponse:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: The email address of the newly registered user
+          example: "user@example.com"
+        loginName:
+          type: string
+          description: The login name of the newly registered user
+          example: "sn\\user"
+    TokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The token used for various authentication or action requests
+          default: ""
+          example: "token-123"
+      required:
+        - token
+    RememberMeDetails:
+      type: object
+      properties:
+        rememberMeToken:
+          type: string
+          description: Token for keeping the user logged in for future sessions
+          example: "Q7Ila3L65OcWYmdjUmYMI4JrfPXsTBKJf2jJFAbKiKRZIOk5YI9ZJi11ZgvUATypWTYBOpxWjMGMUg3M6s813oh5R7y1bi6zIthvHowWCIX8PKGS2xD46jo2zXcrwClr"
+        loginName:
+          type: string
+          description: The login name of the user
+          example: "sn\\user"
+        fullName:
+          type: string
+          description: The full name of the user
+          example: "Sense Net"
+
+security:
+  - BearerAuth: []
