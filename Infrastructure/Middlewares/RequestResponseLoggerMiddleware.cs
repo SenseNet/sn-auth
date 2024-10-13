@@ -16,7 +16,8 @@ public class RequestResponseLoggerMiddleware
     {
         context.Request.EnableBuffering();
         var requestBody = await ReadStreamAsync(context.Request.Body);
-        Log.Information("[Request] Method:{method} {url}", context.Request.Method, context.Request.Path);
+        Log.Information("[Request - {date}] Method:{method} Path:{url}", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+            context.Request.Method, context.Request.Path);
         context.Request.Body.Position = 0;
 
         var originalResponseBodyStream = context.Response.Body;
@@ -28,7 +29,8 @@ public class RequestResponseLoggerMiddleware
         context.Response.Body.Seek(0, SeekOrigin.Begin);
         var responseBody = await ReadStreamAsync(context.Response.Body);
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        Log.Information("[Response] StatusCode:{statusCode}", context.Response.StatusCode);
+        Log.Information("[Response - {date}] Path:{url} StatusCode:{statusCode}", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+            context.Request.Path, context.Response.StatusCode);
 
         await responseBodyStream.CopyToAsync(originalResponseBodyStream);
     }

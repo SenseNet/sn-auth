@@ -1,16 +1,16 @@
-﻿using SenseNet.Client;
-using SenseNetAuth.TokenProviders;
+﻿using System.Collections.Concurrent;
 using System.Text;
 
 namespace SenseNetAuth.TokenProviders.InMemory;
 
 public abstract class InMemoryTokenProvider : ITokenProvider
 {
-    public readonly Dictionary<string, (int UserId, DateTimeOffset Expiry)> tokens = [];
-    public abstract string CreateToken(int userId);
-
+    protected readonly ConcurrentDictionary<string, (int UserId, DateTimeOffset Expiry)> tokens = [];
+    
     private static readonly Random _random = new();
     private const int DEFAULT_TOKEN_SIZE = 128;
+
+    public abstract string CreateToken(int userId);
 
     public bool IsTokenValid(string token)
     {
@@ -19,19 +19,19 @@ public abstract class InMemoryTokenProvider : ITokenProvider
             if (value.Expiry >= DateTimeOffset.UtcNow)
                 return true;
 
-            tokens.Remove(token);
+            tokens.TryRemove(token, out _);
         }
 
         return false;
     }
 
-    public void InvalidateToken(string token) => tokens.Remove(token);
+    public void InvalidateToken(string token) => tokens.TryRemove(token, out _);
 
     public void InvalidateToken(int userId)
     {
         foreach (var s in tokens.Where(kv => kv.Value.UserId == userId).ToList())
         {
-            tokens.Remove(s.Key);
+            tokens.TryRemove(s.Key, out _);
         }
     }
 

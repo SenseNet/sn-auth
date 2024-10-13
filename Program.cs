@@ -3,6 +3,7 @@ using SenseNetAuth.Infrastructure.Installers;
 using SenseNetAuth.Infrastructure.Middlewares;
 using SenseNetAuth.Models.Constants;
 using SenseNetAuth.Models.Options;
+using Serilog;
 using static SenseNetAuth.Infrastructure.Installers.ContentTypeInstaller;
 
 namespace SenseNetAuth;
@@ -43,6 +44,11 @@ public class Program
         if (!app.Environment.IsDevelopment())
             app.UseHsts();
 
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs/log.txt"), rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+
         app.UseMiddleware<RequestResponseLoggerMiddleware>();
         app.UseMiddleware<ExceptionHandlerMiddleware>();
 
@@ -63,6 +69,18 @@ public class Program
             endpoints.MapControllers();
         });
 
-        app.Run();
+        try
+        {
+            Log.Information("Starting up the application...");
+            app.Run();
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Application start-up failed.");
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
     }
 }

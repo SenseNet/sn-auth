@@ -87,7 +87,7 @@ paths:
         - /api/auth
       description: Invalidates remember me token
       requestBody:
-        description: MFA token and one time password
+        description: Remember me token must be sent in the request body
         required: true
         content:
           application/json:

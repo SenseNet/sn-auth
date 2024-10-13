@@ -10,6 +10,7 @@
         : null;
     var queryParams = $"redirectUrl={Model.RedirectUrl}&callbackUri={Model.CallbackUri}";
     var registrationLink = $"/Registration?{queryParams}";
+    var redirectBackUrl = $"{Model.RedirectUrl}?cancelledLogin=true";
     var forgotPasswordLink = $"/ForgottenPassword?{queryParams}";
     var clearCookiesLink = $"/Login?{queryParams}&clearCookies=true";
     var recaptcha = RecaptchaOptions.Value;
@@ -18,7 +19,7 @@
 <div class="authentication-box">
     <div class="authentication-box-sensenet">
         <figure class="logo-wrapper">
-            <a href="https://sensenet.com" target="_blank">
+            <a href="https://www.sensenet.com" target="_blank">
                 <img class="logo" src="/images/sensenet-logo.svg" alt="sensenet logo">
             </a>
         </figure>
@@ -72,22 +73,24 @@
                         </button>
                     </div>
                 </form>
+                <a class="mt-1 navigation-link" href="@redirectBackUrl">Redirect me back</a>
+                <br />
                 <a class="navigation-link" href="@forgotPasswordLink">Forgot password?</a>
                 @if (Model.IsRegistrationEnabled)
                 {
-                    <br />
                     <a class="mt-1 navigation-link" href="@registrationLink">I don't have an account</a>
                 }
             }
             else
             {
-                <div class="error-message font-semibold">Site redirect to is invalid.</div>
+                <div class="error-message font-semibold mt-4 mb-4">Site redirect to is invalid.</div>
+                <a class="navigation-link" href="@redirectBackUrl">Redirect me back</a>
             }
         </div>
     </div>
 </div>
 
-    @section Scripts
+@section Scripts
 {
     <script>
         function onSubmit(token) {
@@ -99,4 +102,4 @@
             }
         }
     </script>
-    }
+}

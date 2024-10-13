@@ -42,7 +42,7 @@ public class JwtTokenProvider : InMemoryTokenProvider
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
         InvalidateToken(userId);
-        tokens.Add(tokenString, (userId, expiration));
+        tokens.TryAdd(tokenString, (userId, expiration));
 
         return tokenString;
     }

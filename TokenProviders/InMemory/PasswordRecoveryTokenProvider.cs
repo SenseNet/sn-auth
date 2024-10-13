@@ -20,7 +20,7 @@ public class PasswordRecoveryTokenProvider : InMemoryTokenProvider
         var token = GenerateUniqueToken(128);
 
         InvalidateToken(userId);
-        tokens.Add(token, (userId, expiration));
+        tokens.TryAdd(token, (userId, expiration));
 
         return token;
     }

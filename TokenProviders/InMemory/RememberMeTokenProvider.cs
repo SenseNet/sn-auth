@@ -1,6 +1,4 @@
-﻿using SenseNetAuth.Models.Options;
-
-namespace SenseNetAuth.TokenProviders.InMemory;
+﻿namespace SenseNetAuth.TokenProviders.InMemory;
 
 public class RememberMeTokenProvider : InMemoryTokenProvider
 {
@@ -10,7 +8,7 @@ public class RememberMeTokenProvider : InMemoryTokenProvider
         var token = GenerateUniqueToken(128);
 
         InvalidateToken(userId);
-        tokens.Add(token, (userId, expiration));
+        tokens.TryAdd(token, (userId, expiration));
 
         return token;
     }

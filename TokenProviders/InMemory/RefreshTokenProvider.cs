@@ -19,7 +19,7 @@ public class RefreshTokenProvider : InMemoryTokenProvider
         var token = GenerateUniqueToken();
 
         InvalidateToken(userId);
-        tokens.Add(token, (userId, expiration));
+        tokens.TryAdd(token, (userId, expiration));
 
         return token;
     }

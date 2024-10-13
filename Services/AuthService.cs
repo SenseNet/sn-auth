@@ -130,7 +130,6 @@ public class AuthService : IAuthService
         {
             _accessTokenProvider.InvalidateToken(userId.Value);
             _refreshTokenProvider.InvalidateToken(userId.Value);
-            _rememberMeTokenProvider.InvalidateToken(userId.Value);
         }
     }
 
