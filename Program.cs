@@ -52,7 +52,7 @@ public class Program
         app.UseMiddleware<RequestResponseLoggerMiddleware>();
         app.UseMiddleware<ExceptionHandlerMiddleware>();
 
-        app.UseHttpsRedirection();
+        //app.UseHttpsRedirection();
         app.UseStaticFiles();
 
         app.UseCors("AllowSpecificOrigin");
