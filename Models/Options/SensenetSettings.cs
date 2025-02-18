@@ -8,6 +8,7 @@ public class SensenetSettings
 public class RepositorySettings
 {
     public string Url { get; set; } = string.Empty;
+    public string InnerUrl { get; set; } = string.Empty;
     public AuthtenticationSettings Authtentication { get; set; }
 }
 
