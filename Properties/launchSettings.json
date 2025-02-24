@@ -1,31 +1,46 @@
 {
-  "$schema": "http://json.schemastore.org/launchsettings.json",
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:2901",
-      "sslPort": 44377
-    }
-  },
   "profiles": {
     "http": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "http://localhost:5027",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5027"
     },
     "https": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:7088;http://localhost:5027",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+        "ASPNETCORE_ENVIRONMENT": "Development",
+
+        "Sensenet__Repository__Url": "https://localhost:44362",
+        "Sensenet__Repository__Authentication__ApiKey": "--to-be-set--",
+
+        "JwtSettings__Issuer": "https://localhost:44362",
+        "JwtSettings__Audience": "sensenet",
+        "JwtSettings__SecretKey": "--to-be-set--",
+        "JwtSettings__AuthTokenExpiryMinutes": "300",
+        "JwtSettings__MultiFactorAuthExpiryMinutes": "300",
+        "JwtSettings__TokenExpiryMinutes": "300",
+        "JwtSettings__RefreshTokenExpiryDays": "15",
+
+        "PasswordRecovery__TokenExpiryMinutes": "60",
+
+        "Registration__IsEnabled": "false",
+
+        "Recaptcha__SiteKey": "--to-be-set--",
+        "Recaptcha__SecretKey": "--to-be-set--",
+
+        "Application__Url": "https://localhost:44311",
+        "Application__AllowedHosts__0": "https://adminui.test.sensenet.com",
+        "Application__AllowedHosts__1": "https://localhost:44362",
+        "Application__AllowedHosts__2": "https://localhost:8080",
+        "Application__AllowedHosts__3": "http://localhost:8080"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:44311"
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -33,6 +48,53 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    "Dockerfile": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HTTPS_PORTS": "443",
+        "ASPNETCORE_HTTP_PORTS": "80",
+
+        "Sensenet__Repository__Url": "https://localhost:44362",
+        "Sensenet__Repository__InnerUrl": "http://SnWebApplication",
+        "Sensenet__Repository__Authentication__ApiKey": "--to-be-set--",
+
+        "JwtSettings__Issuer": "https://localhost:44362",
+        "JwtSettings__Audience": "sensenet",
+        "JwtSettings__SecretKey": "--to-be-set--",
+        "JwtSettings__AuthTokenExpiryMinutes": "300",
+        "JwtSettings__MultiFactorAuthExpiryMinutes": "300",
+        "JwtSettings__TokenExpiryMinutes": "300",
+        "JwtSettings__RefreshTokenExpiryDays": "15",
+
+        "PasswordRecovery__TokenExpiryMinutes": "60",
+
+        "Registration__IsEnabled": "false",
+
+        "Recaptcha__SiteKey": "--to-be-set--",
+        "Recaptcha__SecretKey": "--to-be-set--",
+
+        "Application__Url": "https://localhost:44311",
+        "Application__AllowedHosts__0": "https://adminui.test.sensenet.com",
+        "Application__AllowedHosts__1": "https://localhost:44362",
+        "Application__AllowedHosts__2": "https://localhost:8080",
+        "Application__AllowedHosts__3": "http://localhost:8080"
+      },
+      "publishAllPorts": true,
+      "useSSL": true,
+      "sslPort": 44311
+    }
+  },
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:2901",
+      "sslPort": 44377
     }
   }
 }
