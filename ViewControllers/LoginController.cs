@@ -22,8 +22,7 @@ public class LoginController : Controller
 
         IOptions<SensenetSettings> sensenetOptions,
         IOptions<RegistrationSettings> regOptions,
-        IOptions<ApplicationSettings> appOptions
-,
+        IOptions<ApplicationSettings> appOptions,
         IRecaptchaService recaptchaService)
     {
         _sensenetSettings = sensenetOptions.Value;
@@ -68,7 +67,7 @@ public class LoginController : Controller
         {
             model.IsHostInvalid = true;
         }
-        else if (!await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
+        else if (_recaptchaService.IsConfigured() && !await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
         {
             model.ErrorMessage = "Invalid ReCaptcha";
         }

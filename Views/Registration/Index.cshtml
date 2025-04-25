@@ -2,6 +2,7 @@
 @using SenseNetAuth.Models.Options
 @model SenseNetAuth.Models.ViewModels.RegistrationViewModel
 @inject IOptions<RecaptchaSettings> RecaptchaOptions;
+@inject SenseNetAuth.Services.IRecaptchaService RecaptchaService;
 @{
     ViewBag.Title = "Sense/Net Auth - Registration";
 
@@ -13,6 +14,7 @@
         : null;
     var loginLink = $"/Login?redirectUrl={Model.RedirectUrl}&callbackUri={Model.CallbackUri}";
     var recaptcha = RecaptchaOptions.Value;
+    var isRecaptchaConfigured = RecaptchaService.IsConfigured();
 }
 
 <div class="authentication-box">
@@ -56,12 +58,19 @@
                     </div>
                 </fieldset>
                 <div class="text-end mb-3">
-                    <button class="card-action g-recaptcha"
-                            data-sitekey="@recaptcha.SiteKey"
-                            data-callback="onSubmit"
-                            data-action="submit">
-                        Register
-                    </button>
+                    @if (isRecaptchaConfigured)
+                    {
+                        <button class="card-action g-recaptcha"
+                                data-sitekey="@recaptcha.SiteKey"
+                                data-callback="onSubmit"
+                                data-action="submit">
+                            Register
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="card-action" type="submit">Register</button>
+                    }
                 </div>
             </form>
         </div>
@@ -71,14 +80,17 @@
 
 @section Scripts
 {
-    <script>
-        function onSubmit(token) {
-            const form = document.getElementById("registrationForm");
-            if (form.checkValidity()) {
-                form.submit();
-            } else {
-                form.reportValidity();
+    @if (isRecaptchaConfigured)
+    {
+        <script>
+            function onSubmit(token) {
+                const form = document.getElementById("registrationForm");
+                if (form.checkValidity()) {
+                    form.submit();
+                } else {
+                    form.reportValidity();
+                }
             }
-        }
-    </script>
+        </script>
+    }
 }

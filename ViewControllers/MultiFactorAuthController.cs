@@ -22,7 +22,7 @@ public class MultiFactorAuthController : Controller
     {
         var errorMessage = string.Empty;
         var isMultiFactorTokenExpired = false;
-        if (!await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
+        if (_recaptchaService.IsConfigured() && !await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
         {
             errorMessage = "Invalid ReCaptcha";
         }

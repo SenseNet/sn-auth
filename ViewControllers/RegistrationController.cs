@@ -59,7 +59,7 @@ public class RegistrationController : Controller
 
         if (Request.Form["Password"] != Request.Form["ConfirmPassword"])
             model.ErrorMessage = "Passwords mismatch";
-        else if (!await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
+        else if (_recaptchaService.IsConfigured() && !await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
         {
             model.ErrorMessage = "Invalid ReCaptcha";
         }

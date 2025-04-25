@@ -2,6 +2,7 @@
 @using SenseNetAuth.Models.Options
 @model SenseNetAuth.Models.ViewModels.LoginViewModel
 @inject IOptions<RecaptchaSettings> RecaptchaOptions;
+@inject SenseNetAuth.Services.IRecaptchaService RecaptchaService;
 @{
     ViewBag.Title = "Sense/Net Auth - Login";
 
@@ -14,6 +15,7 @@
     var forgotPasswordLink = $"/ForgottenPassword?{queryParams}";
     var clearCookiesLink = $"/Login?{queryParams}&clearCookies=true";
     var recaptcha = RecaptchaOptions.Value;
+    var isRecaptchaConfigured = RecaptchaService.IsConfigured();
 }
 
 <div class="authentication-box">
@@ -65,12 +67,19 @@
                         }
                     </fieldset>
                     <div class="text-end mb-3">
-                        <button class="card-action g-recaptcha"
-                                data-sitekey="@recaptcha.SiteKey"
-                                data-callback="onSubmit"
-                                data-action="submit">
-                            Login
-                        </button>
+                        @if (isRecaptchaConfigured)
+                        {
+                            <button class="card-action g-recaptcha"
+                                    data-sitekey="@recaptcha.SiteKey"
+                                    data-callback="onSubmit"
+                                    data-action="submit">
+                                Login
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="card-action" type="submit">Login</button>
+                        }
                     </div>
                 </form>
                 <a class="mt-1 navigation-link" href="@redirectBackUrl">Redirect me back</a>
@@ -92,14 +101,17 @@
 
 @section Scripts
 {
-    <script>
-        function onSubmit(token) {
-            const form = document.getElementById("loginForm");
-            if (form.checkValidity()) {
-                form.submit();
-            } else {
-                form.reportValidity();
+    @if (isRecaptchaConfigured)
+    {
+        <script>
+            function onSubmit(token) {
+                const form = document.getElementById("loginForm");
+                if (form.checkValidity()) {
+                    form.submit();
+                } else {
+                    form.reportValidity();
+                }
             }
-        }
-    </script>
+        </script>
+    }
 }

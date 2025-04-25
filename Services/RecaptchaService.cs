@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SenseNetAuth.Models;
 using SenseNetAuth.Models.Options;
@@ -19,6 +18,13 @@ public class RecaptchaService : IRecaptchaService
 
     public async Task<bool> ValidateRecaptchaAsync(string recaptchaResponse)
     {
+        // If recaptcha settings are not configured, bypass validation
+        if (string.IsNullOrEmpty(_recaptchaSettings.SiteKey) || 
+            string.IsNullOrEmpty(_recaptchaSettings.SecretKey))
+        {
+            return true;
+        }
+
         using var client = new HttpClient();
         var response = await client.PostAsync(
             $"https://www.google.com/recaptcha/api/siteverify?secret={_recaptchaSettings.SecretKey}&response={recaptchaResponse}",
@@ -31,5 +37,11 @@ public class RecaptchaService : IRecaptchaService
         var recaptchaResult = JsonConvert.DeserializeObject<RecaptchaResponse>(jsonResponse);
 
         return recaptchaResult != null && recaptchaResult.Success && recaptchaResult.Score > 0.5;
+    }
+    
+    public bool IsConfigured()
+    {
+        return !string.IsNullOrEmpty(_recaptchaSettings.SiteKey) && 
+               !string.IsNullOrEmpty(_recaptchaSettings.SecretKey);
     }
 }
