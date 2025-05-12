@@ -20,26 +20,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\images\" />
-  </ItemGroup>
+	<Content Include="wwwroot\**\*">
+	  <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	</Content>
 
-  <ItemGroup>
-    <Content Update="Views\PasswordRecovery\Index.cshtml">
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
+	<Content Include="EmailTemplates\ForgottenPassword.html">
+	  <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+	</Content>
   </ItemGroup>
-
-  <ItemGroup>
-    <None Update="EmailTemplates\ForgottenPassword.html">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-    <ItemGroup>
-	    <None Include="wwwroot\**">
-		    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	    </None>
-    </ItemGroup>
 
 </Project>
