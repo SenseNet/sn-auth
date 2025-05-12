@@ -3,4 +3,5 @@
 public interface IRecaptchaService
 {
     public Task<bool> ValidateRecaptchaAsync(string recaptchaResponse);
+    public bool IsConfigured();
 }

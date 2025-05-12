@@ -2,10 +2,12 @@
 @using SenseNetAuth.Models.Options
 @model SenseNetAuth.Models.ViewModels.MultiFactorViewModel
 @inject IOptions<RecaptchaSettings> RecaptchaOptions;
+@inject SenseNetAuth.Services.IRecaptchaService RecaptchaService;
 @{
     ViewBag.Title = "Sense/Net Auth - Login";
 
     var recaptcha = RecaptchaOptions.Value;
+    var isRecaptchaConfigured = RecaptchaService.IsConfigured();
 }
 
 <div class="authentication-box">
@@ -59,12 +61,19 @@
                     </div>
                 </fieldset>
                 <div class="text-end mb-3">
-                    <button class="card-action g-recaptcha"
-                            data-sitekey="@recaptcha.SiteKey"
-                            data-callback="onSubmit"
-                            data-action="submit">
-                        Send
-                    </button>
+                    @if (isRecaptchaConfigured)
+                    {
+                        <button class="card-action g-recaptcha"
+                                data-sitekey="@recaptcha.SiteKey"
+                                data-callback="onSubmit"
+                                data-action="submit">
+                            Send
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="card-action" type="submit">Send</button>
+                    }
                 </div>
             </form>
         </div>
@@ -73,14 +82,17 @@
 
 @section Scripts
 {
-    <script>
-        function onSubmit(token) {
-            const form = document.getElementById("multiFactorLoginForm");
-            if (form.checkValidity()) {
-                form.submit();
-            } else {
-                form.reportValidity();
+    @if (isRecaptchaConfigured)
+    {
+        <script>
+            function onSubmit(token) {
+                const form = document.getElementById("multiFactorLoginForm");
+                if (form.checkValidity()) {
+                    form.submit();
+                } else {
+                    form.reportValidity();
+                }
             }
-        }
-    </script>
+        </script>
+    }
 }

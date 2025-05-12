@@ -47,7 +47,7 @@ public class ForgottenPasswordController : Controller
     public async Task<IActionResult> PostForgottenPassword()
     {
         var model = new ForgottenPasswordViewModel();
-        if (!await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
+        if (_recaptchaService.IsConfigured() && !await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
         {
             model.ErrorMessage = "Invalid ReCaptcha";
         }
