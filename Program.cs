@@ -27,7 +27,12 @@ public class Program
             .AddSenseNetClient()
             .ConfigureSenseNetRepository(Repositories.Default, repositoryOptions =>
             {
-                builder.Configuration.GetSection("Sensenet:Repository").Bind(repositoryOptions);
+                var optionSection = builder.Configuration.GetSection("Sensenet:Repository");
+                    
+                if (!string.IsNullOrEmpty(optionSection[nameof(RepositorySettings.InnerUrl)]))
+                    optionSection[nameof(RepositorySettings.Url)] = optionSection[nameof(RepositorySettings.InnerUrl)];
+
+                optionSection.Bind(repositoryOptions);
             }, RegisterContentTypes);
 
         builder.Services.AddCors(options =>
@@ -52,7 +57,7 @@ public class Program
         app.UseMiddleware<RequestResponseLoggerMiddleware>();
         app.UseMiddleware<ExceptionHandlerMiddleware>();
 
-        app.UseHttpsRedirection();
+        //app.UseHttpsRedirection();
         app.UseStaticFiles();
 
         app.UseCors("AllowSpecificOrigin");
