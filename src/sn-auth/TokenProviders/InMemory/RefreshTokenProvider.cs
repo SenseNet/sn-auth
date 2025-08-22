@@ -13,13 +13,13 @@ public class RefreshTokenProvider : InMemoryTokenProvider
         _jwtSettings = options.Value;
     }
 
-    public override string CreateToken(int userId)
+    public override string CreateToken(int userId, string siteUrl)
     {
         var expiration = new DateTimeOffset(DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiryDays));
         var token = GenerateUniqueToken();
 
-        InvalidateToken(userId);
-        tokens.TryAdd(token, (userId, expiration));
+        InvalidateToken(userId, siteUrl);
+        tokens.TryAdd(token, (userId, expiration, siteUrl));
 
         return token;
     }
