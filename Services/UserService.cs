@@ -3,6 +3,7 @@ using SenseNet.Client;
 using SenseNetAuth.Models;
 using SenseNetAuth.Models.Constants;
 using SenseNetAuth.Models.Options;
+using System.DirectoryServices.AccountManagement;
 
 namespace SenseNetAuth.Services
 {
@@ -10,14 +11,17 @@ namespace SenseNetAuth.Services
     {
         private readonly IRepositoryCollection _repositoryCollection;
         private readonly RegistrationSettings _registrationSettings;
+        private readonly ADSettings _adsettingsOptions;
 
         public UserService(
             IRepositoryCollection repositoryCollection,
-            IOptions<RegistrationSettings> options
+            IOptions<RegistrationSettings> registrationOptions,
+            IOptions<ADSettings> adsettingsOptions
         )
         {
             _repositoryCollection = repositoryCollection;
-            _registrationSettings = options.Value;
+            _registrationSettings = registrationOptions.Value;
+            _adsettingsOptions = adsettingsOptions.Value;
         }
 
         public async Task<User?> GetUserByUserIdAsync(int userId, CancellationToken cancel)
@@ -38,27 +42,64 @@ namespace SenseNetAuth.Services
         {
             var repo = await GetRepositoryAsync(cancel);
 
-            var request = new OperationRequest
+            bool adEnabled = _adsettingsOptions.Enabled.ToLower() == "true";
+            string adDomain = _adsettingsOptions.Domain;
+            if (adEnabled && !string.IsNullOrEmpty(adDomain) && username.StartsWith(adDomain + "\\"))
             {
-                OperationName = "ValidateCredentials",
-                Path = "/Root",
-                PostData = new
-                {
-                    username,
-                    password
+                var userHelper = username;
+                if (!username.Contains("\\")) {
+                    userHelper = adDomain + "\\" + username;
                 }
-            };
+                
+                var query = new QueryContentRequest
+                {
+                    ContentQuery = $"+InTree:/Root/IMS +TypeIs:User +LoginName: {userHelper}",
+                };
+                var results = await repo.QueryAsync<User>(query, cancel).ConfigureAwait(false);
 
-            try
+                if (results != null && results.Count() > 0)
+                {
+                    try
+                    {
+                        User queriedUser = results.First();
+                        bool isADAuth = await ActiveDirectoryAuthentication(userHelper, password);
+                        if (isADAuth)
+                        {
+                            return queriedUser.Id;
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        return null;
+                    }
+                }
+            }
+            else
             {
-                var response = await repo.InvokeActionAsync<dynamic>(request, cancel);
+                var request = new OperationRequest
+                {
+                    OperationName = "ValidateCredentials",
+                    Path = "/Root",
+                    PostData = new
+                    {
+                        username,
+                        password
+                    }
+                };
 
-                return response.id;
+                try
+                {
+                    var response = await repo.InvokeActionAsync<dynamic>(request, cancel);
+
+                    return response.id;
+                }
+                catch
+                {
+                    return null;
+                }
             }
-            catch
-            {
-                return null;
-            }
+
+            return null;
         }
 
         public async Task<MultiFactorInfoResponse?> GetMultiFactorAuthenticationInfoAsync(int userId, CancellationToken cancel)
@@ -153,12 +194,24 @@ namespace SenseNetAuth.Services
             return false;
         }
 
+        private Task<bool> ActiveDirectoryAuthentication(string username, string password)
+        {
+            bool resultBool = false;
+
+            using (PrincipalContext principalContext = new(ContextType.Domain))
+            {
+                resultBool = principalContext.ValidateCredentials(username, password);
+            }
+
+            return Task.FromResult(resultBool);
+        }
+
         private async Task<User?> GetUserByUserIdAsync(IRepository repo, int userId, CancellationToken cancel)
         {
-            var query = new QueryContentRequest
-            {
-                ContentQuery = $"Id: {userId}",
-            };
+            //var query = new QueryContentRequest
+            //{
+            //    ContentQuery = $"Id: {userId}",
+            //};
             var results = await repo.LoadContentAsync<User>(userId, cancel)
                 .ConfigureAwait(false);
 
