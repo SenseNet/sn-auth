@@ -46,14 +46,19 @@ namespace SenseNetAuth.Services
             string adDomain = _adsettingsOptions.Domain.ToLower();
             if (!string.IsNullOrWhiteSpace(username) && adEnabled && !string.IsNullOrEmpty(adDomain) && username.ToLower().StartsWith(adDomain + "\\"))
             {
-                var userHelper = username;
-                if (!username.Contains("\\")) {
-                    userHelper = adDomain + "\\" + username;
+                var userOnlyName = username;
+                var userADAuthHelper = username;
+                if (username.Contains("\\")) {
+                    userOnlyName = username.Split('\\')[1];
+                }
+                else
+                {
+                    userADAuthHelper = adDomain + "\\" + username;
                 }
                 
                 var query = new QueryContentRequest
                 {
-                    ContentQuery = $"+InTree:'/Root/IMS' +TypeIs:User +LoginName:{userHelper}",
+                    ContentQuery = $"+InTree:'/Root/IMS' +TypeIs:User +LoginName:{userOnlyName} +Domain:{adDomain}",
                 };
                 var results = await repo.QueryAsync<User>(query, cancel).ConfigureAwait(false);
 
@@ -62,7 +67,7 @@ namespace SenseNetAuth.Services
                     try
                     {
                         User queriedUser = results.First();
-                        bool isADAuth = await ActiveDirectoryAuthentication(userHelper, password);
+                        bool isADAuth = await ActiveDirectoryAuthentication(userADAuthHelper, password);
                         if (isADAuth)
                         {
                             return queriedUser.Id;
