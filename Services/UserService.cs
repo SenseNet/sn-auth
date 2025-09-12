@@ -43,8 +43,8 @@ namespace SenseNetAuth.Services
             var repo = await GetRepositoryAsync(cancel);
 
             bool adEnabled = _adsettingsOptions.Enabled.ToLower() == "true";
-            string adDomain = _adsettingsOptions.Domain;
-            if (adEnabled && !string.IsNullOrEmpty(adDomain) && username.StartsWith(adDomain + "\\"))
+            string adDomain = _adsettingsOptions.Domain.ToLower();
+            if (!string.IsNullOrWhiteSpace(username) && adEnabled && !string.IsNullOrEmpty(adDomain) && username.ToLower().StartsWith(adDomain + "\\"))
             {
                 var userHelper = username;
                 if (!username.Contains("\\")) {
@@ -53,7 +53,7 @@ namespace SenseNetAuth.Services
                 
                 var query = new QueryContentRequest
                 {
-                    ContentQuery = $"+InTree:/Root/IMS +TypeIs:User +LoginName: {userHelper}",
+                    ContentQuery = $"+InTree:'/Root/IMS' +TypeIs:User +LoginName:{userHelper}",
                 };
                 var results = await repo.QueryAsync<User>(query, cancel).ConfigureAwait(false);
 
@@ -90,7 +90,6 @@ namespace SenseNetAuth.Services
                 try
                 {
                     var response = await repo.InvokeActionAsync<dynamic>(request, cancel);
-
                     return response.id;
                 }
                 catch
