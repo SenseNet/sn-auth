@@ -51,7 +51,7 @@ public class AuthService : IAuthService
         if (!string.IsNullOrEmpty(loginRequest.RememberMeToken))
         {
             if (_rememberMeTokenProvider.IsTokenValid(loginRequest.RememberMeToken))
-                userId = _rememberMeTokenProvider.GetUserIdByToken(loginRequest.RememberMeToken)!.Value;
+                userId = _rememberMeTokenProvider.GetUserInfoByToken(loginRequest.RememberMeToken)!.Value.UserId;
             else
                 throw new BadRequestException(ResponseMessages.RememberMeTokenExpired);
         }
@@ -63,12 +63,12 @@ public class AuthService : IAuthService
         }
 
         var response = new LoginResponse();
-        if (loginRequest.RememberMeRequested && !string.IsNullOrEmpty(loginRequest.RememberMeToken)) 
+        if (loginRequest.RememberMeRequested && !string.IsNullOrEmpty(loginRequest.RememberMeToken))
         {
             var user = await _userService.GetUserByUserIdAsync(userId, cancel).ConfigureAwait(false);
             response.RememberMeDetails = new RememberMeDetails
             {
-                RememberMeToken = _rememberMeTokenProvider.CreateToken(userId),
+                RememberMeToken = _rememberMeTokenProvider.CreateToken(userId, loginRequest.SiteUrl),
                 FullName = user.FullName,
                 LoginName = user.LoginName
             };
@@ -77,15 +77,15 @@ public class AuthService : IAuthService
         var multiFactorInfo = await _userService.GetMultiFactorAuthenticationInfoAsync(userId, cancel);
         if (multiFactorInfo == null || !multiFactorInfo.MultiFactorEnabled)
         {
-            response.AccessToken = _accessTokenProvider.CreateToken(userId);
-            response.RefreshToken = _refreshTokenProvider.CreateToken(userId);
+            response.AccessToken = _accessTokenProvider.CreateToken(userId, loginRequest.SiteUrl);
+            response.RefreshToken = _refreshTokenProvider.CreateToken(userId, loginRequest.SiteUrl);
 
             return response;
         }
         else
         {
             response.MultiFactorRequired = true;
-            response.MultiFactorAuthToken = _multiFactorAuthTokenProvider.CreateToken(userId);
+            response.MultiFactorAuthToken = _multiFactorAuthTokenProvider.CreateToken(userId, loginRequest.SiteUrl);
 
             if (!multiFactorInfo.MultiFactorRegistered)
             {
@@ -99,37 +99,37 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse> MultiFactorLoginAsync(MultiFactorLoginRequest loginRequest, CancellationToken cancel, bool directLogin = true)
     {
-        var userId = _multiFactorAuthTokenProvider.GetUserIdByToken(loginRequest.MultiFactorAuthToken);
-        if (!userId.HasValue || !_multiFactorAuthTokenProvider.IsTokenValid(loginRequest.MultiFactorAuthToken))
+        var userInfo = _multiFactorAuthTokenProvider.GetUserInfoByToken(loginRequest.MultiFactorAuthToken);
+        if (!userInfo.HasValue || !_multiFactorAuthTokenProvider.IsTokenValid(loginRequest.MultiFactorAuthToken))
             throw new BadRequestException(ResponseMessages.InvalidMultiFactorToken);
 
-        if (!await _userService.ValidateTwoFactorCodeAsync(userId.Value, loginRequest.MultiFactorCode, cancel))
+        if (!await _userService.ValidateTwoFactorCodeAsync(userInfo.Value.UserId, loginRequest.MultiFactorCode, cancel))
             throw new BadRequestException(ResponseMessages.InvalidMultiFactorCode);
 
         if (directLogin)
         {
             return new LoginResponse
             {
-                AccessToken = _accessTokenProvider.CreateToken(userId.Value),
-                RefreshToken = _refreshTokenProvider.CreateToken(userId.Value)
+                AccessToken = _accessTokenProvider.CreateToken(userInfo.Value.UserId, loginRequest.SiteUrl),
+                RefreshToken = _refreshTokenProvider.CreateToken(userInfo.Value.UserId, loginRequest.SiteUrl)
             };
         }
         else
         {
             return new LoginResponse
             {
-                AuthToken = _authTokenProvider.CreateToken(userId.Value)
+                AuthToken = _authTokenProvider.CreateToken(userInfo.Value.UserId, loginRequest.SiteUrl)
             };
         }
     }
 
     public void Logout(string token)
     {
-        var userId = _accessTokenProvider.GetUserIdByToken(token);
-        if (userId.HasValue)
+        var userInfo = _accessTokenProvider.GetUserInfoByToken(token);
+        if (userInfo.HasValue)
         {
-            _accessTokenProvider.InvalidateToken(userId.Value);
-            _refreshTokenProvider.InvalidateToken(userId.Value);
+            _accessTokenProvider.InvalidateToken(userInfo.Value);
+            _refreshTokenProvider.InvalidateToken(userInfo.Value);
         }
     }
 
@@ -140,13 +140,13 @@ public class AuthService : IAuthService
 
     public LoginResponse RefreshToken(string token)
     {
-        if (_refreshTokenProvider.IsTokenValid(token))
+        var userInfo = _refreshTokenProvider.GetValidUserInfo(token);
+        if (userInfo.HasValue)
         {
-            var userId = _refreshTokenProvider.GetUserIdByToken(token);
             return new LoginResponse
             {
-                AccessToken = _accessTokenProvider.CreateToken(userId!.Value),
-                RefreshToken = _refreshTokenProvider.CreateToken(userId!.Value)
+                AccessToken = _accessTokenProvider.CreateToken(userInfo.Value),
+                RefreshToken = _refreshTokenProvider.CreateToken(userInfo.Value)
             };
         }
 
@@ -192,7 +192,7 @@ public class AuthService : IAuthService
             .ConfigureAwait(false);
         if (user != null)
         {
-            var token = _passwordRecoveryTokenProvider.CreateToken(user.Id);
+            var token = _passwordRecoveryTokenProvider.CreateToken(user.Id, "");
             var passwordRecoveryUrl = !string.IsNullOrEmpty(forgottenPasswordRequest.PasswordRecoveryUrl)
                 ? forgottenPasswordRequest.PasswordRecoveryUrl
                 : $"{_applicationSettings.Url}/PasswordRecovery";
@@ -210,13 +210,13 @@ public class AuthService : IAuthService
         if (!_passwordRecoveryTokenProvider.IsTokenValid(passwordRecoveryRequest.Token))
             throw new BadRequestException(ResponseMessages.InvalidRecoveryToken);
 
-        var userId = _passwordRecoveryTokenProvider.GetUserIdByToken(passwordRecoveryRequest.Token);
-        if (await _userService.ChangePasswordAsync(userId!.Value, passwordRecoveryRequest.Password, cancel))
+        var userInfo = _passwordRecoveryTokenProvider.GetUserInfoByToken(passwordRecoveryRequest.Token);
+        if (await _userService.ChangePasswordAsync(userInfo.Value.UserId, passwordRecoveryRequest.Password, cancel))
         {
             _passwordRecoveryTokenProvider.InvalidateToken(passwordRecoveryRequest.Token);
-            _rememberMeTokenProvider.InvalidateToken(userId.Value);
+            _rememberMeTokenProvider.InvalidateToken(userInfo.Value);
         }
-            
+
     }
 
     public async Task<LoginResponse> AuthenticateAsync(LoginRequest loginRequest, CancellationToken cancel)
@@ -224,8 +224,9 @@ public class AuthService : IAuthService
         int userId;
         if (!string.IsNullOrEmpty(loginRequest.RememberMeToken))
         {
-            if (_rememberMeTokenProvider.IsTokenValid(loginRequest.RememberMeToken))
-                userId = _rememberMeTokenProvider.GetUserIdByToken(loginRequest.RememberMeToken)!.Value;
+            var userInfo = _rememberMeTokenProvider.GetValidUserInfo(loginRequest.RememberMeToken);
+            if (userInfo.HasValue)
+                userId = userInfo.Value.UserId;
             else
                 throw new BadRequestException(ResponseMessages.RememberMeTokenExpired);
         }
@@ -240,7 +241,7 @@ public class AuthService : IAuthService
 
         var response = new LoginResponse
         {
-            AuthToken = _authTokenProvider.CreateToken(userId),
+            AuthToken = _authTokenProvider.CreateToken(userId, loginRequest.SiteUrl),
         };
 
         if (loginRequest.RememberMeRequested && string.IsNullOrEmpty(loginRequest.RememberMeToken))
@@ -248,7 +249,7 @@ public class AuthService : IAuthService
             var user = await _userService.GetUserByUserIdAsync(userId, cancel).ConfigureAwait(false);
             response.RememberMeDetails = new RememberMeDetails
             {
-                RememberMeToken = _rememberMeTokenProvider.CreateToken(userId),
+                RememberMeToken = _rememberMeTokenProvider.CreateToken(userId, loginRequest.SiteUrl),
                 FullName = user.FullName,
                 LoginName = user.LoginName
             };
@@ -257,7 +258,7 @@ public class AuthService : IAuthService
         if (multiFactorInfo != null && multiFactorInfo.MultiFactorEnabled)
         {
             response.MultiFactorRequired = true;
-            response.MultiFactorAuthToken = _multiFactorAuthTokenProvider.CreateToken(userId);
+            response.MultiFactorAuthToken = _multiFactorAuthTokenProvider.CreateToken(userId, loginRequest.SiteUrl);
 
             if (!multiFactorInfo.MultiFactorRegistered)
             {
@@ -274,33 +275,33 @@ public class AuthService : IAuthService
         if (!_authTokenProvider.IsTokenValid(tokenRequest.Token))
             throw new UnauthorizedException(ResponseMessages.InvalidAuthToken);
 
-        var userId = _authTokenProvider.GetUserIdByToken(tokenRequest.Token);
+        var userInfo = _authTokenProvider.GetUserInfoByToken(tokenRequest.Token);
 
         return new LoginResponse
         {
-            AccessToken = _accessTokenProvider.CreateToken(userId!.Value),
-            RefreshToken = _refreshTokenProvider.CreateToken(userId!.Value)
+            AccessToken = _accessTokenProvider.CreateToken(userInfo.Value.UserId, userInfo.Value.SiteUrl),
+            RefreshToken = _refreshTokenProvider.CreateToken(userInfo.Value.UserId, userInfo.Value.SiteUrl)
         };
     }
 
     public async Task ChangePasswordAsync(string bearerToken, ChangePasswordRequest changePasswordRequest, CancellationToken cancel)
     {
-        if (!_accessTokenProvider.IsTokenValid(bearerToken))
+        var userInfo = _accessTokenProvider.GetValidUserInfo(bearerToken);
+        if (userInfo is null)
             throw new UnauthorizedException(ResponseMessages.InvalidAccessToken);
 
-        var userId = _accessTokenProvider.GetUserIdByToken(bearerToken);
-        await _userService.ChangePasswordAsync(userId!.Value, changePasswordRequest.Password, cancel);
-        _rememberMeTokenProvider.InvalidateToken(userId.Value);
+        await _userService.ChangePasswordAsync(userInfo.Value.UserId, changePasswordRequest.Password, cancel);
+        _rememberMeTokenProvider.InvalidateToken(userInfo.Value);
     }
 
     public async Task<UserDetails> GetUserDetailsAsync(string token, CancellationToken cancel)
     {
-        var userId = _accessTokenProvider.GetUserIdByToken(token);
+        var userInfo = _accessTokenProvider.GetValidUserInfo(token);
 
-        if (!_accessTokenProvider.IsTokenValid(token))
+        if (userInfo is null)
             throw new UnauthorizedException(ResponseMessages.InvalidAccessToken);
 
-        var user = await _userService.GetUserByUserIdAsync(userId.Value, cancel);
+        var user = await _userService.GetUserByUserIdAsync(userInfo.Value.UserId, cancel);
 
         return new UserDetails
         {

@@ -33,7 +33,8 @@ public class MultiFactorAuthController : Controller
                 var response = await _authService.MultiFactorLoginAsync(new Models.MultiFactorLoginRequest
                 {
                     MultiFactorAuthToken = Request.Form["MultiFactorAuthToken"],
-                    MultiFactorCode = Request.Form["MultiFactorCode"]
+                    MultiFactorCode = Request.Form["MultiFactorCode"],
+                    SiteUrl = Request.Form["RedirectUrl"]
                 }, HttpContext.RequestAborted, false);
 
                 if (response != null)

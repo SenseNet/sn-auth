@@ -17,7 +17,7 @@ public class JwtTokenProvider : InMemoryTokenProvider
         _jwtSettings = jwtSettings.Value;
     }
 
-    public override string CreateToken(int userId)
+    public override string CreateToken(int userId, string siteUrl)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -41,8 +41,8 @@ public class JwtTokenProvider : InMemoryTokenProvider
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        InvalidateToken(userId);
-        tokens.TryAdd(tokenString, (userId, expiration));
+        InvalidateToken(userId, siteUrl);
+        tokens.TryAdd(tokenString, (userId, expiration, siteUrl));
 
         return tokenString;
     }
