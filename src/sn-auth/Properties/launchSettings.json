@@ -16,11 +16,11 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
 
         "Sensenet__Repository__Url": "https://localhost:44362",
-        "Sensenet__Repository__Authentication__ApiKey": "--to-be-set--",
+        "Sensenet__Repository__Authentication__ApiKey": "",
 
         "JwtSettings__Issuer": "https://localhost:44362",
         "JwtSettings__Audience": "sensenet",
-        "JwtSettings__SecretKey": "--to-be-set--",
+        "JwtSettings__SecretKey": "",
         "JwtSettings__AuthTokenExpiryMinutes": "300",
         "JwtSettings__MultiFactorAuthExpiryMinutes": "300",
         "JwtSettings__TokenExpiryMinutes": "300",
@@ -30,8 +30,8 @@
 
         "Registration__IsEnabled": "false",
 
-        "Recaptcha__SiteKey": "--to-be-set--",
-        "Recaptcha__SecretKey": "--to-be-set--",
+        "Recaptcha__SiteKey": "",
+        "Recaptcha__SecretKey": "",
 
         "Application__Url": "https://localhost:44311",
         "Application__AllowedHosts__0": "https://adminui.test.sensenet.com",
@@ -60,11 +60,11 @@
 
         "Sensenet__Repository__Url": "https://localhost:44362",
         "Sensenet__Repository__InnerUrl": "http://SnWebApplication",
-        "Sensenet__Repository__Authentication__ApiKey": "--to-be-set--",
+        "Sensenet__Repository__Authentication__ApiKey": "",
 
         "JwtSettings__Issuer": "https://localhost:44362",
         "JwtSettings__Audience": "sensenet",
-        "JwtSettings__SecretKey": "--to-be-set--",
+        "JwtSettings__SecretKey": "",
         "JwtSettings__AuthTokenExpiryMinutes": "300",
         "JwtSettings__MultiFactorAuthExpiryMinutes": "300",
         "JwtSettings__TokenExpiryMinutes": "300",
@@ -74,8 +74,8 @@
 
         "Registration__IsEnabled": "false",
 
-        "Recaptcha__SiteKey": "--to-be-set--",
-        "Recaptcha__SecretKey": "--to-be-set--",
+        "Recaptcha__SiteKey": "",
+        "Recaptcha__SecretKey": "",
 
         "Application__Url": "https://localhost:44311",
         "Application__AllowedHosts__0": "https://adminui.test.sensenet.com",

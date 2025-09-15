@@ -24,6 +24,7 @@ public class Program
             .Configure<PasswordRecoverySettings>(options => builder.Configuration.GetSection("PasswordRecovery").Bind(options))
             .Configure<EmailSettings>(options => builder.Configuration.GetSection("Email").Bind(options))
             .Configure<RecaptchaSettings>(options => builder.Configuration.GetSection("Recaptcha").Bind(options))
+            .Configure<ADSettings>(options => builder.Configuration.GetSection("ADSetting").Bind(options))
             .AddSenseNetClient()
             .ConfigureSenseNetRepository(Repositories.Default, repositoryOptions =>
             {

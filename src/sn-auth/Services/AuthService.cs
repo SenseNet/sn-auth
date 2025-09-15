@@ -1,11 +1,11 @@
-﻿using System.Text.RegularExpressions;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using SenseNetAuth.Infrastructure.Exceptions;
 using SenseNetAuth.Models;
 using SenseNetAuth.Models.Constants;
 using SenseNetAuth.Models.Options;
 using SenseNetAuth.TokenProviders;
 using SenseNetAuth.TokenProviders.InMemory;
+using System.Text.RegularExpressions;
 
 namespace SenseNetAuth.Services;
 
