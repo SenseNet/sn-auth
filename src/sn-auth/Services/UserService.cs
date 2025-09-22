@@ -58,7 +58,7 @@ namespace SenseNetAuth.Services
                 
                 var query = new QueryContentRequest
                 {
-                    ContentQuery = $"+InTree:'/Root/IMS' +TypeIs:User +LoginName:{userOnlyName} +Domain:{adDomain}",
+                    ContentQuery = $"+InTree:'/Root/IMS' +TypeIs:User +LoginName:{userOnlyName} +Domain:{adDomain} +Enabled:1",
                 };
                 var results = await repo.QueryAsync<User>(query, cancel).ConfigureAwait(false);
 
