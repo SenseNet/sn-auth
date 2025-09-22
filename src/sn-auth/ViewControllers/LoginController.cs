@@ -80,7 +80,8 @@ public class LoginController : Controller
                     Password = Request.Form["Password"].FirstOrDefault() ?? string.Empty,
                     LoginName = Request.Form["LoginName"].FirstOrDefault() ?? string.Empty,
                     RememberMeToken = HttpContext.Request.Cookies["RememberMeToken"] ?? string.Empty,
-                    RememberMeRequested = Request.Form["RememberMe"].FirstOrDefault()?.ToLower() == "on"
+                    RememberMeRequested = Request.Form["RememberMe"].FirstOrDefault()?.ToLower() == "on",
+                    SiteUrl = redirectUrl.FirstOrDefault() ?? string.Empty // Ensure SiteUrl is a valid URL
                 };
                 response = await _authService.AuthenticateAsync(request, HttpContext.RequestAborted);
             }
@@ -89,7 +90,7 @@ public class LoginController : Controller
                 model.ErrorMessage = "Invalid credentials";
             }
         }
-        
+
         if (!string.IsNullOrEmpty(model.ErrorMessage) || model.IsHostInvalid)
         {
             model.IsRegistrationEnabled = _regSettings.IsEnabled;
@@ -105,8 +106,8 @@ public class LoginController : Controller
         {
             HttpContext.Response.Cookies.Append("RememberMeToken", response.RememberMeDetails.RememberMeToken);
             HttpContext.Response.Cookies.Append("RememberMeLoginName", response.RememberMeDetails.LoginName);
-        } 
-        
+        }
+
         if (response.MultiFactorRequired)
         {
             var mfaViewModel = new MultiFactorViewModel

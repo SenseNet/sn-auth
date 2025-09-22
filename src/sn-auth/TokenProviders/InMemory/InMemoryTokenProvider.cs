@@ -5,12 +5,14 @@ namespace SenseNetAuth.TokenProviders.InMemory;
 
 public abstract class InMemoryTokenProvider : ITokenProvider
 {
-    protected readonly ConcurrentDictionary<string, (int UserId, DateTimeOffset Expiry)> tokens = [];
-    
+    protected readonly ConcurrentDictionary<string, UserInfo> tokens = [];
+
     private static readonly Random _random = new();
     private const int DEFAULT_TOKEN_SIZE = 128;
 
-    public abstract string CreateToken(int userId);
+    public string CreateToken(UserInfo userInfo) => CreateToken(userInfo.UserId, userInfo.SiteUrl);
+
+    public abstract string CreateToken(int userId, string siteUrl);
 
     public bool IsTokenValid(string token)
     {
@@ -25,21 +27,36 @@ public abstract class InMemoryTokenProvider : ITokenProvider
         return false;
     }
 
+    public UserInfo? GetValidUserInfo(string token)
+    {
+        if (tokens.TryGetValue(token, out var value))
+        {
+            if (value.Expiry >= DateTimeOffset.UtcNow)
+                return value;
+
+            tokens.TryRemove(token, out _);
+        }
+
+        return null;
+    }
+
     public void InvalidateToken(string token) => tokens.TryRemove(token, out _);
 
-    public void InvalidateToken(int userId)
+    public void InvalidateToken(UserInfo userInfo) => InvalidateToken(userInfo.UserId, userInfo.SiteUrl);
+
+    public void InvalidateToken(int userId, string siteUrl)
     {
-        foreach (var s in tokens.Where(kv => kv.Value.UserId == userId).ToList())
+        foreach (var s in tokens.Where(kv => kv.Value.UserId == userId && kv.Value.SiteUrl == siteUrl).ToList())
         {
             tokens.TryRemove(s.Key, out _);
         }
     }
 
-    public int? GetUserIdByToken(string token)
+    public UserInfo? GetUserInfoByToken(string token)
     {
         var found = tokens.TryGetValue(token, out var value);
 
-        return found ? value.UserId : null;
+        return found ? value : null;
     }
 
     protected static string GenerateUniqueToken(int length = DEFAULT_TOKEN_SIZE)
