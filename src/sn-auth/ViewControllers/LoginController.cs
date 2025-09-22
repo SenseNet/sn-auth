@@ -41,6 +41,7 @@ public class LoginController : Controller
             RedirectUrl = redirectUrl,
             CallbackUri = callbackUri,
             IsHostInvalid = !_appSettings.AllowedHosts.Contains(redirectUrl),
+            RepositoryUrl = _sensenetSettings.Repository.Url,
         };
 
         if (clearCookies && !string.IsNullOrEmpty(HttpContext.Request.Cookies["RememberMeToken"]))

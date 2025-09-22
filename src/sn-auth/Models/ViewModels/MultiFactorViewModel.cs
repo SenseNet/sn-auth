@@ -2,6 +2,7 @@
 
 public class MultiFactorViewModel
 {
+    public string RepositoryUrl { get; set; } = string.Empty;
     public string RedirectUrl { get; set; } = string.Empty;
     public string CallbackUri { get; set; } = string.Empty;
     public bool MultiFactorRequired { get; set; }

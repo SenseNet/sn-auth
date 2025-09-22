@@ -21,6 +21,13 @@
     </div>
     <div class="authentication-box-content">
         <p class="card-title font-semibold">Password Recovery</p>
+        @if (!string.IsNullOrEmpty(Model.RepositoryUrl))
+        {
+            <div class="repository-info mb-2">
+                <span class="font-semibold"></span> <span>@Model.RepositoryUrl</span>
+            </div>
+        }
+        <br />
         <div>
             @if ((!string.IsNullOrEmpty(Model.ErrorMessage)))
             {

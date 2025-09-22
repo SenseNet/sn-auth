@@ -2,6 +2,7 @@
 
 public class ForgottenPasswordViewModel
 {
+    public string RepositoryUrl { get; set; } = string.Empty;
     public string RedirectUrl { get; set; } = string.Empty;
     public string CallbackUri { get; set; } = string.Empty;
     public string ErrorMessage { get; set; } = string.Empty;
