@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using SenseNetAuth.Models.Options;
 using SenseNetAuth.Models.ViewModels;
 using SenseNetAuth.Services;
 
@@ -8,14 +10,17 @@ public class PasswordRecoveryController : Controller
 {
     private readonly IAuthService _authService;
     private readonly IRecaptchaService _recaptchaService;
+    private readonly SensenetSettings _sensenetSettings;
 
     public PasswordRecoveryController(
         IAuthService authService,
-        IRecaptchaService recaptchaService
+        IRecaptchaService recaptchaService,
+        IOptions<SensenetSettings> sensenetOptions
         )
     {
         _authService = authService;
         _recaptchaService = recaptchaService;
+        _sensenetSettings = sensenetOptions.Value;
     }
 
     [HttpGet("passwordRecovery")]
@@ -23,6 +28,7 @@ public class PasswordRecoveryController : Controller
     {
         return View("Index", new PasswordRecoveryViewModel
         {
+            RepositoryUrl = _sensenetSettings.Repository.Url,
             CallbackUri = callbackUri,
             RedirectUrl = redirectUrl,
             RecoveryToken = token
@@ -59,6 +65,7 @@ public class PasswordRecoveryController : Controller
 
         if (!string.IsNullOrEmpty(model.ErrorMessage))
         {
+            model.RepositoryUrl = _sensenetSettings.Repository.Url;
             model.RedirectUrl = Request.Form["RedirectUrl"];
             model.CallbackUri = Request.Form["CallbackUri"];
             model.RecoveryToken = Request.Form["Token"];

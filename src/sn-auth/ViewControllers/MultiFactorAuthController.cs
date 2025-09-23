@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SenseNetAuth.Infrastructure.Exceptions;
 using SenseNetAuth.Models.Constants;
+using SenseNetAuth.Models.Options;
 using SenseNetAuth.Models.ViewModels;
 using SenseNetAuth.Services;
 
@@ -10,11 +12,16 @@ public class MultiFactorAuthController : Controller
 {
     private readonly IAuthService _authService;
     private readonly IRecaptchaService _recaptchaService;
+    private readonly SensenetSettings _sensenetSettings;
 
-    public MultiFactorAuthController(IRecaptchaService recaptchaService, IAuthService authService)
+    public MultiFactorAuthController(
+        IRecaptchaService recaptchaService, 
+        IAuthService authService,
+        IOptions<SensenetSettings> sensenetOptions)
     {
         _recaptchaService = recaptchaService;
         _authService = authService;
+        _sensenetSettings = sensenetOptions.Value;
     }
 
     [HttpPost("multiFactorAuth")]
@@ -61,6 +68,7 @@ public class MultiFactorAuthController : Controller
         {
             return View("Index", new MultiFactorViewModel
             {
+                RepositoryUrl = _sensenetSettings.Repository.Url,
                 CallbackUri = Request.Form["CallbackUri"],
                 RedirectUrl = Request.Form["RedirectUrl"],
                 MultiFactorAuthToken = Request.Form["MultiFactorAuthToken"],

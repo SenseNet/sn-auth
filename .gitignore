@@ -114,3 +114,5 @@ _TeamCity*
 
 # DotCover is a Code Coverage Tool
 *.dotCover
+.github/*.md
+.vscode/*

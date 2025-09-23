@@ -38,6 +38,7 @@ public class ForgottenPasswordController : Controller
         {
             RedirectUrl = redirectUrl,
             CallbackUri = callbackUri,
+            RepositoryUrl = _sensenetSettings.Repository.Url,
         };
 
         return View("Index", model);
@@ -66,6 +67,7 @@ public class ForgottenPasswordController : Controller
 
         model.RedirectUrl = Request.Form["RedirectUrl"];
         model.CallbackUri = Request.Form["CallbackUri"];
+        model.RepositoryUrl = _sensenetSettings.Repository.Url;
         if (string.IsNullOrEmpty(model.ErrorMessage))
             model.SuccessMessage = "Email sent";
 
