@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>5bb120a6-d3b5-4f38-a521-6719ecf58dc1</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>.</DockerfileContext>
+    <DockerfileContext>..</DockerfileContext>
     <DockerfileRunArguments>--network sensenet --name SnAuth</DockerfileRunArguments>
   </PropertyGroup>
 
