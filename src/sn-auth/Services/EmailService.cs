@@ -47,6 +47,9 @@ public class EmailService : IEmailService
             IsBodyHtml = true
         };
 
+        if (!string.IsNullOrEmpty(_emailSettings.Tag))
+            mailMessage.Headers.Add("X-Tags", _emailSettings.Tag);
+
         mailMessage.To.Add(toEmail);
 
         try
