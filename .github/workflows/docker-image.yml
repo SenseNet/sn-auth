@@ -44,6 +44,16 @@ jobs:
             echo "⚠️ No Dockerfile found, skipping Docker build"
           fi
 
+      - name: Compute version tag (commit date + short SHA)
+        if: steps.check_dockerfile.outputs.dockerfile_exists == 'true'
+        id: version
+        run: |
+          SHORT_SHA=$(git rev-parse --short=8 "$GITHUB_SHA")
+          COMMIT_DATE=$(git show -s --format=%cd --date=format:%Y%m%d "$GITHUB_SHA")
+          VERSION_TAG="${COMMIT_DATE}-${SHORT_SHA}"
+          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "Computed version tag: ${VERSION_TAG}"
+
       - name: Set up Docker metadata
         if: steps.check_dockerfile.outputs.dockerfile_exists == 'true'
         id: meta
@@ -53,6 +63,8 @@ jobs:
           tags: |
             # Clean branch name (e.g., feature-conditional-recaptcha)
             type=ref,event=branch
+            # Immutable version tag: <commit-date>-<short-sha>, e.g. 20260522-a3777f7a
+            type=raw,value=${{ steps.version.outputs.version_tag }}
             # 'latest' tag only when pushing to main or master (regardless of default branch)
             type=raw,value=latest,enable=${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
             # 'preview' tag only when pushing to develop
