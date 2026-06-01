@@ -49,7 +49,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: sensenetcsp/sn-snauth
+          images: sensenetcsp/sn-auth
           tags: |
             # Clean branch name (e.g., feature-conditional-recaptcha)
             type=ref,event=branch
