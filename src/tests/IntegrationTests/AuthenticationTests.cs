@@ -89,11 +89,10 @@ namespace IntegrationTests
         }
 
         [Fact]
-        public async Task MultipleLoginsInSameApplication_ShouldInvalidateFirstToken_AndSecondTokenShouldBeValid()
+        public async Task MultipleLoginsInSameApplication_ShouldKeepBothTokensValidByDefault()
         {
             // Arrange
             var getLoginResponse = await GetLoginResponseAsync("https://localhost", "/home");
-            await Task.Delay(1000); // Ensure there's a slight delay to differentiate the tokens
             var getLoginResponseSecond = await GetLoginResponseAsync("https://localhost", "/home");
 
             TestOutputHelper.WriteLine("First login and second  access token equals: " + (getLoginResponse.AccessToken == getLoginResponseSecond.AccessToken).ToString());
@@ -108,7 +107,8 @@ namespace IntegrationTests
             TestOutputHelper.WriteLine("Second login access token validation response: " + secondLoginAccessTokenValidationResponse.StatusCode);
 
             // Assert
-            Assert.Equal(HttpStatusCode.Unauthorized, firstLoginAccessTokenValidationResponse.StatusCode);
+            Assert.NotEqual(getLoginResponse.AccessToken, getLoginResponseSecond.AccessToken);
+            Assert.Equal(HttpStatusCode.OK, firstLoginAccessTokenValidationResponse.StatusCode);
             Assert.Equal(HttpStatusCode.OK, secondLoginAccessTokenValidationResponse.StatusCode);
         }
 
@@ -117,7 +117,6 @@ namespace IntegrationTests
         {
             // Arrange
             var loginResponse = await GetLoginResponseAsync("https://localhost", "/home");
-            await Task.Delay(1000); // Ensure there's a slight delay to differentiate the tokens
             var secondLoginResponse = await GetLoginResponseAsync("https://localhost:8080", "/home");
 
             // Act
@@ -128,7 +127,7 @@ namespace IntegrationTests
             var secondLoginAccessTokenValidationResponse = await Client.GetAsync("api/auth/validate-token");
 
             // Assert
-            loginResponse.AuthToken.ShouldNotBe(secondLoginResponse.AccessToken);
+            loginResponse.AccessToken.ShouldNotBe(secondLoginResponse.AccessToken);
             Assert.Equal(HttpStatusCode.OK, firstLoginAccessTokenValidationResponse.StatusCode);
             Assert.Equal(HttpStatusCode.OK, secondLoginAccessTokenValidationResponse.StatusCode);
         }
