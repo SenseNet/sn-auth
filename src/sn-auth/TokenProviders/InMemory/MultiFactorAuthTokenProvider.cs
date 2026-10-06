@@ -19,8 +19,7 @@ public class MultiFactorAuthTokenProvider : InMemoryTokenProvider
         var expiration = new DateTimeOffset(DateTime.UtcNow.AddDays(_jwtSettings.MultiFactorAuthExpiryMinutes));
         var token = GenerateUniqueToken(128);
 
-        InvalidateToken(userId, siteUrl);
-        tokens.TryAdd(token, (userId, expiration, siteUrl));
+        StoreToken(token, new UserInfo(userId, expiration, siteUrl), _jwtSettings.SingleSessionPerUser);
 
         return token;
     }
