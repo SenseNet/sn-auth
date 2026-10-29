@@ -9,11 +9,11 @@
     var redirectUrlHost = !string.IsNullOrEmpty(Model.RedirectUrl)
         ? new Uri(Model.RedirectUrl).Host.ToString()
         : null;
-    var queryParams = $"redirectUrl={Model.RedirectUrl}&callbackUri={Model.CallbackUri}";
-    var registrationLink = $"/Registration?{queryParams}";
+    var queryParams = Model.QueryString;
+    var registrationLink = $"/Registration{queryParams}";
     var redirectBackUrl = $"{Model.RedirectUrl}?cancelledLogin=true";
-    var forgotPasswordLink = $"/ForgottenPassword?{queryParams}";
-    var clearCookiesLink = $"/Login?{queryParams}&clearCookies=true";
+    var forgotPasswordLink = $"/ForgottenPassword{queryParams}";
+    var clearCookiesLink = $"/Login{queryParams}&clearCookies=true";
     var recaptcha = RecaptchaOptions.Value;
     var isRecaptchaConfigured = RecaptchaService.IsConfigured();
 }
@@ -50,6 +50,7 @@
                     <fieldset>
                         <input type="hidden" name="RedirectUrl" value="@Model.RedirectUrl" />
                         <input type="hidden" name="CallbackUri" value="@Model.CallbackUri" />
+                    <partial name="_ExternalLoginBinding" model="Model" />
                         @if (Model.IsRememberMeSet)
                         {
                             <div class="mb-2">

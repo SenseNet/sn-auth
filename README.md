@@ -8,6 +8,9 @@ The authentication server consists of two parts:
 
 The description of the API endpoints can be found in the swagger documentation.
 
+See [external login state/S256 binding and rollout](docs/external-login.md) for
+the companion AdminUI authentication changes and required server-first upgrade.
+
 ## Concurrent browser sessions
 
 By default, the same user can sign in from multiple browsers or devices using the

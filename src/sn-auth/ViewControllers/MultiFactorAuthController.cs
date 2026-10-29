@@ -13,20 +13,26 @@ public class MultiFactorAuthController : Controller
     private readonly IAuthService _authService;
     private readonly IRecaptchaService _recaptchaService;
     private readonly SensenetSettings _sensenetSettings;
+    private readonly ApplicationSettings _appSettings;
 
     public MultiFactorAuthController(
         IRecaptchaService recaptchaService, 
         IAuthService authService,
-        IOptions<SensenetSettings> sensenetOptions)
+        IOptions<SensenetSettings> sensenetOptions,
+        IOptions<ApplicationSettings> appOptions)
     {
         _recaptchaService = recaptchaService;
         _authService = authService;
         _sensenetSettings = sensenetOptions.Value;
+        _appSettings = appOptions.Value;
     }
 
     [HttpPost("multiFactorAuth")]
     public async Task<IActionResult> PostTwoFactorAuth()
     {
+        var flow = ExternalLoginFlow.FromForm(Request.Form);
+        if (!flow.IsValid(_appSettings.AllowedHosts))
+            return BadRequest("Invalid login callback");
         var errorMessage = string.Empty;
         var isMultiFactorTokenExpired = false;
         if (_recaptchaService.IsConfigured() && !await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
@@ -41,11 +47,11 @@ public class MultiFactorAuthController : Controller
                 {
                     MultiFactorAuthToken = Request.Form["MultiFactorAuthToken"],
                     MultiFactorCode = Request.Form["MultiFactorCode"],
-                    SiteUrl = Request.Form["RedirectUrl"]
+                    SiteUrl = flow.RedirectUrl
                 }, HttpContext.RequestAborted, false);
 
                 if (response != null)
-                    return Redirect($"{new Uri(new Uri(Request.Form["RedirectUrl"]), Request.Form["CallbackUri"])}?auth_code={response.AuthToken}");
+                    return Redirect(flow.CallbackUrl(response));
             }
             catch (BadRequestException ex)
             {
@@ -57,26 +63,23 @@ public class MultiFactorAuthController : Controller
 
         if (isMultiFactorTokenExpired)
         {
-            return View("~/Views/Login/Index", new LoginViewModel
+            return View("~/Views/Login/Index.cshtml", flow.CopyTo(new LoginViewModel
             {
-                CallbackUri = Request.Form["CallbackUri"],
-                RedirectUrl = Request.Form["RedirectUrl"],
-                ErrorMessage = errorMessage
-            });
+                RepositoryUrl = _sensenetSettings.Repository.Url,
+                ErrorMessage = "Login expired. Please sign in again."
+            }));
         }
         else
         {
-            return View("Index", new MultiFactorViewModel
+            return View("Index", flow.CopyTo(new MultiFactorViewModel
             {
                 RepositoryUrl = _sensenetSettings.Repository.Url,
-                CallbackUri = Request.Form["CallbackUri"],
-                RedirectUrl = Request.Form["RedirectUrl"],
                 MultiFactorAuthToken = Request.Form["MultiFactorAuthToken"],
                 QrCodeSetupImageUrl = Request.Form["QrCodeSetupImageUrl"],
                 ManualEntryKey = Request.Form["ManualEntryKey"],
                 MultiFactorRequired = !string.IsNullOrEmpty(Request.Form["QrCodeSetupImageUrl"].FirstOrDefault()),
                 ErrorMessage = errorMessage
-            });
+            }));
         }
     }
 }

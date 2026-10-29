@@ -6,7 +6,7 @@
 @{
     ViewBag.Title = "Sense/Net Auth - Password recovery";
 
-    var loginLink = $"/Login?redirectUrl={Model.RedirectUrl}&callbackUri={Model.CallbackUri}";
+    var loginLink = $"/Login{Model.QueryString}";
     var recaptcha = RecaptchaOptions.Value;
     var isRecaptchaConfigured = RecaptchaService.IsConfigured();
 }
@@ -37,6 +37,7 @@
                 <fieldset>
                     <input type="hidden" name="RedirectUrl" value="@Model.RedirectUrl" />
                     <input type="hidden" name="CallbackUri" value="@Model.CallbackUri" />
+                    <partial name="_ExternalLoginBinding" model="Model" />
                     <input type="hidden" name="Token" value="@Model.RecoveryToken" />
                     <div class="mb-3">
                         <label for="Password">Password</label><br />

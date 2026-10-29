@@ -33,16 +33,14 @@ public class LoginController : Controller
     }
 
     [HttpGet("login")]
-    public IActionResult Index([FromQuery] string redirectUrl, [FromQuery] string callbackUri, [FromQuery] bool clearCookies)
+    public IActionResult Index([FromQuery] ExternalLoginFlow flow, [FromQuery] bool clearCookies)
     {
-        var model = new LoginViewModel
+        var model = flow.CopyTo(new LoginViewModel
         {
             IsRegistrationEnabled = _regSettings.IsEnabled,
-            RedirectUrl = redirectUrl,
-            CallbackUri = callbackUri,
-            IsHostInvalid = !_appSettings.AllowedHosts.Contains(redirectUrl),
+            IsHostInvalid = !flow.IsValid(_appSettings.AllowedHosts),
             RepositoryUrl = _sensenetSettings.Repository.Url,
-        };
+        });
 
         if (clearCookies && !string.IsNullOrEmpty(HttpContext.Request.Cookies["RememberMeToken"]))
         {
@@ -62,9 +60,10 @@ public class LoginController : Controller
     [HttpPost("login")]
     public async Task<IActionResult> PostLogin()
     {
-        var model = new LoginViewModel();
+        var flow = ExternalLoginFlow.FromForm(Request.Form);
+        var model = flow.CopyTo(new LoginViewModel());
         LoginResponse? response = null;
-        if (!Request.Form.TryGetValue("RedirectUrl", out var redirectUrl) || !_appSettings.AllowedHosts.Contains(redirectUrl.FirstOrDefault()))
+        if (!flow.IsValid(_appSettings.AllowedHosts))
         {
             model.IsHostInvalid = true;
         }
@@ -82,7 +81,11 @@ public class LoginController : Controller
                     LoginName = Request.Form["LoginName"].FirstOrDefault() ?? string.Empty,
                     RememberMeToken = HttpContext.Request.Cookies["RememberMeToken"] ?? string.Empty,
                     RememberMeRequested = Request.Form["RememberMe"].FirstOrDefault()?.ToLower() == "on",
-                    SiteUrl = redirectUrl.FirstOrDefault() ?? string.Empty // Ensure SiteUrl is a valid URL
+                    SiteUrl = flow.RedirectUrl,
+                    State = flow.State,
+                    CodeChallenge = flow.CodeChallenge,
+                    CodeChallengeMethod = flow.CodeChallengeMethod,
+                    CallbackUri = flow.CallbackUri
                 };
                 response = await _authService.AuthenticateAsync(request, HttpContext.RequestAborted);
             }
@@ -95,8 +98,6 @@ public class LoginController : Controller
         if (!string.IsNullOrEmpty(model.ErrorMessage) || model.IsHostInvalid)
         {
             model.IsRegistrationEnabled = _regSettings.IsEnabled;
-            model.RedirectUrl = redirectUrl;
-            model.CallbackUri = Request.Form["CallbackUri"].FirstOrDefault() ?? string.Empty;
             model.RepositoryUrl = _sensenetSettings.Repository.Url;
             model.IsRememberMeSet = !string.IsNullOrEmpty(HttpContext.Request.Cookies["RememberMeToken"]);
             model.RememberMeLoginName = HttpContext.Request.Cookies["RememberMeLoginName"] ?? string.Empty;
@@ -111,20 +112,19 @@ public class LoginController : Controller
 
         if (response.MultiFactorRequired)
         {
-            var mfaViewModel = new MultiFactorViewModel
+            var mfaViewModel = flow.CopyTo(new MultiFactorViewModel
             {
-                RedirectUrl = redirectUrl,
-                CallbackUri = Request.Form["CallbackUri"].FirstOrDefault() ?? string.Empty,
+                RepositoryUrl = _sensenetSettings.Repository.Url,
                 ManualEntryKey = response.ManualEntryKey,
                 MultiFactorAuthToken = response.MultiFactorAuthToken,
                 MultiFactorRequired = response.MultiFactorRequired,
                 QrCodeSetupImageUrl = response.QrCodeSetupImageUrl
-            };
+            });
             return View("../MultiFactorAuth/Index", mfaViewModel);
         }
         else
         {
-            return Redirect($"{new Uri(new Uri(redirectUrl), Request.Form["CallbackUri"])}?auth_code={response.AuthToken}");
+            return Redirect(flow.CallbackUrl(response));
         }
     }
 }

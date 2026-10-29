@@ -34,18 +34,16 @@ public class RegistrationController : Controller
     }
 
     [HttpGet("registration")]
-    public IActionResult Index([FromQuery] string redirectUrl, [FromQuery] string callbackUri)
+    public IActionResult Index([FromQuery] ExternalLoginFlow flow)
     {
         if (!_regSettings.IsEnabled)
-            return Redirect($"/Login?redirectUrl={redirectUrl}&callbackUri={callbackUri}");
+            return Redirect($"/Login{flow.QueryString}");
 
-        var model = new RegistrationViewModel
+        var model = flow.CopyTo(new RegistrationViewModel
         {
             IsRegistrationEnabled = true,
-            RedirectUrl = redirectUrl,
-            CallbackUri = callbackUri,
             RepositoryUrl = _sensenetSettings.Repository.Url
-        };
+        });
 
         return View("Index", model);
     }
@@ -53,11 +51,14 @@ public class RegistrationController : Controller
     [HttpPost("registration")]
     public async Task<IActionResult> PostRegistration()
     {
-        var model = new RegistrationViewModel();
-        if (!Request.Form.TryGetValue("RedirectUrl", out var redirectUrl) || !_appSettings.AllowedHosts.Contains(redirectUrl.FirstOrDefault()))
+        var flow = ExternalLoginFlow.FromForm(Request.Form);
+        var model = flow.CopyTo(new RegistrationViewModel());
+        if (!flow.IsValid(_appSettings.AllowedHosts))
             model.IsHostInvalid = true;
 
-        if (Request.Form["Password"] != Request.Form["ConfirmPassword"])
+        if (model.IsHostInvalid)
+            model.ErrorMessage = "Invalid login callback";
+        else if (Request.Form["Password"] != Request.Form["ConfirmPassword"])
             model.ErrorMessage = "Passwords mismatch";
         else if (_recaptchaService.IsConfigured() && !await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
         {
@@ -93,22 +94,18 @@ public class RegistrationController : Controller
         if (!string.IsNullOrEmpty(model.ErrorMessage) || model.IsHostInvalid)
         {
             model.IsRegistrationEnabled = true;
-            model.RedirectUrl = redirectUrl;
-            model.CallbackUri = Request.Form["CallbackUri"];
             model.RepositoryUrl = _sensenetSettings.Repository.Url;
             return View("Index", model);
         }
         else
         {
-            var loginModel = new LoginViewModel
+            var loginModel = flow.CopyTo(new LoginViewModel
             {
                 IsRegistrationEnabled = true,
-                RedirectUrl = redirectUrl,
-                CallbackUri = Request.Form["CallbackUri"],
                 RepositoryUrl = _sensenetSettings.Repository.Url,
                 IsHostInvalid = model.IsHostInvalid,
                 SuccessMessage = "Successful registration"
-            };
+            });
 
             return View("../Login/Index", loginModel);
         }

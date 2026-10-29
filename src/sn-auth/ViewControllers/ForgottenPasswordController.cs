@@ -32,14 +32,12 @@ public class ForgottenPasswordController : Controller
     }
 
     [HttpGet("forgottenPassword")]
-    public IActionResult Index([FromQuery] string redirectUrl, [FromQuery] string callbackUri)
+    public IActionResult Index([FromQuery] ExternalLoginFlow flow)
     {
-        var model = new ForgottenPasswordViewModel
+        var model = flow.CopyTo(new ForgottenPasswordViewModel
         {
-            RedirectUrl = redirectUrl,
-            CallbackUri = callbackUri,
             RepositoryUrl = _sensenetSettings.Repository.Url,
-        };
+        });
 
         return View("Index", model);
     }
@@ -47,7 +45,8 @@ public class ForgottenPasswordController : Controller
     [HttpPost("forgottenPassword")]
     public async Task<IActionResult> PostForgottenPassword()
     {
-        var model = new ForgottenPasswordViewModel();
+        var flow = ExternalLoginFlow.FromForm(Request.Form);
+        var model = flow.CopyTo(new ForgottenPasswordViewModel());
         if (_recaptchaService.IsConfigured() && !await _recaptchaService.ValidateRecaptchaAsync(Request.Form["g-recaptcha-response"].FirstOrDefault() ?? string.Empty))
         {
             model.ErrorMessage = "Invalid ReCaptcha";
@@ -56,7 +55,7 @@ public class ForgottenPasswordController : Controller
         {
             try
             {
-                var uri = $"redirectUrl={Request.Form["RedirectUrl"]}&callbackUri={Request.Form["CallbackUri"]}";
+                var uri = flow.QueryString.TrimStart('?');
                 await _authService.ForgottenPasswordAsync(new Models.ForgottenPasswordRequest
                 {
                     Email = Request.Form["Email"]
@@ -65,8 +64,6 @@ public class ForgottenPasswordController : Controller
             catch { }
         }
 
-        model.RedirectUrl = Request.Form["RedirectUrl"];
-        model.CallbackUri = Request.Form["CallbackUri"];
         model.RepositoryUrl = _sensenetSettings.Repository.Url;
         if (string.IsNullOrEmpty(model.ErrorMessage))
             model.SuccessMessage = "Email sent";

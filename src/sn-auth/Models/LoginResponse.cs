@@ -5,6 +5,8 @@ public class LoginResponse
     public string AccessToken { get; set; } = string.Empty;
     public string RefreshToken { get; set; } = string.Empty;
     public string AuthToken { get; set; } = string.Empty;
+    public string? State { get; set; }
+    public string? CallbackUri { get; set; }
     public bool MultiFactorRequired { get; set; }
     public string QrCodeSetupImageUrl { get; set; } = string.Empty;
     public string ManualEntryKey { get; set; } = string.Empty;
