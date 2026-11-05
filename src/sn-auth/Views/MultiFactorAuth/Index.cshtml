@@ -59,6 +59,7 @@
                 <fieldset>
                     <input type="hidden" name="RedirectUrl" value="@Model.RedirectUrl" />
                     <input type="hidden" name="CallbackUri" value="@Model.CallbackUri" />
+                    <partial name="_ExternalLoginBinding" model="Model" />
                     <input type="hidden" name="MultiFactorAuthToken" value="@Model.MultiFactorAuthToken" />
                     <input type="hidden" name="QrCodeSetupImageUrl" value="@Model.QrCodeSetupImageUrl" />
                     <input type="hidden" name="ManualEntryKey" value="@Model.ManualEntryKey" />

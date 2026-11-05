@@ -24,21 +24,20 @@ public class PasswordRecoveryController : Controller
     }
 
     [HttpGet("passwordRecovery")]
-    public IActionResult Index([FromQuery] string token, [FromQuery] string redirectUrl, [FromQuery] string callbackUri)
+    public IActionResult Index([FromQuery] string token, [FromQuery] ExternalLoginFlow flow)
     {
-        return View("Index", new PasswordRecoveryViewModel
+        return View("Index", flow.CopyTo(new PasswordRecoveryViewModel
         {
             RepositoryUrl = _sensenetSettings.Repository.Url,
-            CallbackUri = callbackUri,
-            RedirectUrl = redirectUrl,
             RecoveryToken = token
-        });
+        }));
     }
 
     [HttpPost("passwordRecovery")]
     public async Task<IActionResult> PostRecoveryToken()
     {
-        var model = new PasswordRecoveryViewModel();
+        var flow = ExternalLoginFlow.FromForm(Request.Form);
+        var model = flow.CopyTo(new PasswordRecoveryViewModel());
         if (Request.Form["Password"] != Request.Form["ConfirmPassword"])
         {
             model.ErrorMessage = "Passwords mismatch";
@@ -66,14 +65,12 @@ public class PasswordRecoveryController : Controller
         if (!string.IsNullOrEmpty(model.ErrorMessage))
         {
             model.RepositoryUrl = _sensenetSettings.Repository.Url;
-            model.RedirectUrl = Request.Form["RedirectUrl"];
-            model.CallbackUri = Request.Form["CallbackUri"];
             model.RecoveryToken = Request.Form["Token"];
             return View("Index", model);
         }
         else
         {
-            return Redirect($"/Login?redirectUrl={Request.Form["RedirectUrl"]}&callbackUri={Request.Form["CallbackUri"]}");
+            return Redirect($"/Login{flow.QueryString}");
         }
     }
 }

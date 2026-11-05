@@ -12,7 +12,7 @@
     var repositoryUrlHost = !string.IsNullOrEmpty(Model.RepositoryUrl)
         ? new Uri(Model.RepositoryUrl).Host.ToString()
         : null;
-    var loginLink = $"/Login?redirectUrl={Model.RedirectUrl}&callbackUri={Model.CallbackUri}";
+    var loginLink = $"/Login{Model.QueryString}";
     var recaptcha = RecaptchaOptions.Value;
     var isRecaptchaConfigured = RecaptchaService.IsConfigured();
 }
@@ -47,6 +47,7 @@
                 <fieldset>
                     <input type="hidden" name="RedirectUrl" value="@Model.RedirectUrl" />
                     <input type="hidden" name="CallbackUri" value="@Model.CallbackUri" />
+                    <partial name="_ExternalLoginBinding" model="Model" />
                     <div class="mb-3">
                         <label for="Email">Email</label><br />
                         <input class="text-input" id="Email" name="Email" required />

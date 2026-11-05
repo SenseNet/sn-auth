@@ -106,6 +106,9 @@ public class AuthService : IAuthService
         if (!userInfo.HasValue || userInfo.Value.SiteUrl != loginRequest.SiteUrl)
             throw new BadRequestException(ResponseMessages.InvalidMultiFactorToken);
 
+        if (directLogin && userInfo.Value.AuthorizationCodeBinding != null)
+            throw new BadRequestException(ResponseMessages.InvalidMultiFactorToken);
+
         if (!await _userService.ValidateTwoFactorCodeAsync(userInfo.Value.UserId, loginRequest.MultiFactorCode, cancel))
             throw new BadRequestException(ResponseMessages.InvalidMultiFactorCode);
 
@@ -119,7 +122,9 @@ public class AuthService : IAuthService
 
             return new LoginResponse
             {
-                AuthToken = _authTokenProvider.CreateToken(consumed.UserId, consumed.SiteUrl)
+                AuthToken = _authTokenProvider.CreateToken(consumed),
+                State = consumed.AuthorizationCodeBinding?.State,
+                CallbackUri = consumed.AuthorizationCodeBinding?.CallbackUri
             };
         }
     }
@@ -157,6 +162,7 @@ public class AuthService : IAuthService
     {
         lock (_tokenLock)
         {
+            userInfo = userInfo with { AuthorizationCodeBinding = null };
             if (string.IsNullOrEmpty(userInfo.SessionId))
                 userInfo = userInfo with { SessionId = Guid.NewGuid().ToString("N") };
 
@@ -242,6 +248,8 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse> AuthenticateAsync(LoginRequest loginRequest, CancellationToken cancel)
     {
+        var binding = AuthorizationCodeBinding.Create(loginRequest.State, loginRequest.CodeChallenge,
+            loginRequest.CodeChallengeMethod, loginRequest.CallbackUri);
         int userId;
         if (!string.IsNullOrEmpty(loginRequest.RememberMeToken))
         {
@@ -260,7 +268,8 @@ public class AuthService : IAuthService
 
         var multiFactorInfo = await _userService.GetMultiFactorAuthenticationInfoAsync(userId, cancel);
 
-        var response = new LoginResponse();
+        var response = new LoginResponse { State = binding?.State, CallbackUri = binding?.CallbackUri };
+        var tokenUser = new UserInfo(userId, default, loginRequest.SiteUrl) { AuthorizationCodeBinding = binding };
 
         if (loginRequest.RememberMeRequested && string.IsNullOrEmpty(loginRequest.RememberMeToken))
         {
@@ -277,7 +286,7 @@ public class AuthService : IAuthService
         {
             response.MultiFactorRequired = true;
             lock (_tokenLock)
-                response.MultiFactorAuthToken = _multiFactorAuthTokenProvider.CreateToken(userId, loginRequest.SiteUrl);
+                response.MultiFactorAuthToken = _multiFactorAuthTokenProvider.CreateToken(tokenUser);
 
             if (!multiFactorInfo.MultiFactorRegistered)
             {
@@ -288,7 +297,7 @@ public class AuthService : IAuthService
         else
         {
             lock (_tokenLock)
-                response.AuthToken = _authTokenProvider.CreateToken(userId, loginRequest.SiteUrl);
+                response.AuthToken = _authTokenProvider.CreateToken(tokenUser);
         }
 
         return response;
@@ -298,6 +307,14 @@ public class AuthService : IAuthService
     {
         lock (_tokenLock)
         {
+            var pending = _authTokenProvider.GetValidUserInfo(tokenRequest.Token)
+                ?? throw new UnauthorizedException(ResponseMessages.InvalidAuthToken);
+            // Check proof before consuming: an invalid request cannot burn a legitimate code.
+            // A proof-bearing client must also reject legacy, unbound codes (downgrade protection).
+            if (pending.AuthorizationCodeBinding is { } binding
+                ? !binding.Matches(tokenRequest.CodeVerifier)
+                : tokenRequest.CodeVerifier != null)
+                throw new UnauthorizedException(ResponseMessages.InvalidAuthToken);
             var userInfo = _authTokenProvider.ConsumeToken(tokenRequest.Token)
                 ?? throw new UnauthorizedException(ResponseMessages.InvalidAuthToken);
             return CreateTokenPair(userInfo);
